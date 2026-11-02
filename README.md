@@ -10,6 +10,7 @@
 
 | 游戏 | 人数 | 玩法 |
 |---|---|---|
+| 晚安小菜园 `goodnight-garden` | 2 人合作 | 塔防。夜里小动物来偷菜，兔兔种花（向日葵、小雏菊、胡萝卜），猫猫造机关（稻草人、洒水壶、风车），各花各的星星，可以互送。白天两人同时布置、都准备好后入夜，夜里自动播放；两人的塔挨着会触发组合。守住 5 夜通关，菜筐空了可以两人一起按住复活一次。 |
 | 牧场叠叠消 `pasture-stack` | 2 人合作 | 回合制叠牌三消。两人共用一个牌局和一个 7 格卡槽，轮流各拿一张，一起清空牧场；卡槽满了一起输。牌局随机生成，不保证有解。移出、撤回、洗牌、复活两人共享，每局各 1 次。 |
 
 ## 本地开发
@@ -55,8 +56,12 @@ public/
     pasture-stack/
       logic.js     纯规则模块，服务端和前端共用
       index.html   游戏页面
+    goodnight-garden/
+      logic.js     塔防规则和夜晚演算（服务端算结果，前端用同样的输入重放动画）
+      index.html   游戏页面
 test/
   pasture-stack.test.js
+  goodnight-garden.test.js
 ```
 
 ## 房间是怎么工作的
@@ -65,7 +70,7 @@ test/
 - `GET /api/rooms/:code`：查询房间是否存在、属于哪个游戏、几个人。
 - `GET /api/rooms/:code/ws?player=<玩家标识>&name=<昵称>`：WebSocket 连接。
   - 客户端发送 `{ "type": "<操作>", ... }`。
-  - 服务端用游戏的 `applyAction()` 校验并更新状态，再把 `{ type: "state", room, you, state, event }` 广播给房间里所有人。
+  - 服务端用游戏的 `applyAction(state, action, { seat, playerCount, now })` 校验并更新状态，再把 `{ type: "state", serverTime, room, you, state, event }` 广播给房间里所有人。`serverTime` 用来校准前端时钟，有计时的游戏（比如夜晚回放）靠它让两边播放同步。
   - 不合法的操作只回给发起人 `{ type: "error", message }`，比如"还没轮到你"。
 - 服务端是唯一可信的状态来源，前端只发操作、只渲染广播回来的状态。
 - 玩家标识按浏览器标签页保存，刷新不变。关掉页面后再从邀请链接回来，会接管不在线的那个座位。
@@ -81,10 +86,20 @@ test/
 | 牌面果蔬 | [水果铺子](https://www.iconfont.cn/collections/detail?cid=51141)、[蔬菜超市](https://www.iconfont.cn/collections/detail?cid=51142) | 阿狸的信燕 |
 | 小羊、小兔、小猫 | [彩色动物club](https://www.iconfont.cn/collections/detail?cid=50174) | 芝芝桃桃和丸子 |
 | 爱心、邀请、礼花、花朵、新芽 | [可爱生活彩色线性图标](https://www.iconfont.cn/collections/detail?cid=54346) | 黑洛视觉 |
+| 小猪、小老鼠、小猴子、狐狸 | [彩色动物club](https://www.iconfont.cn/collections/detail?cid=50174) | 芝芝桃桃和丸子 |
+| 向日葵、小雏菊 | [多彩小植物](https://www.iconfont.cn/collections/detail?cid=50664) | 芝芝桃桃和丸子 |
+| 稻草人、洒水壶、风车、菜筐 | [复古农场小游戏](https://www.iconfont.cn/collections/detail?cid=52094) | 叁叁sanh |
 
-合并进 sprite 时把描边从纯黑统一换成暖棕 `#4A3A33`。移出、撤回、洗牌三个道具图标在 iconfont 上没找到同风格的，按《可爱生活彩色线性图标》的画法（浅色圆底、右上角圆点、圆头描边）补画。
+合并进 sprite 时把描边从纯黑统一换成暖棕 `#4A3A33`。《复古农场小游戏》的颜色偏艳、描边没写颜色，合并时换成了柔和色并补上暖棕描边。星星和月亮按果蔬图标的画法补画。移出、撤回、洗牌三个道具图标在 iconfont 上没找到同风格的，按《可爱生活彩色线性图标》的画法（浅色圆底、右上角圆点、圆头描边）补画。
 
 新游戏可以直接引用 sprite 里已有的图标；要加新图标，把 SVG 的内容包成 `<symbol id="名字" viewBox="...">` 追加到 `icons.svg`。
+
+## 晚安小菜园的夜晚是怎么算的
+
+- 两人都按"准备"时，服务端调用 `simulateNight()` 把整夜一次算完：结果（哄睡几只、叼走几颗、得多少星星）直接写进状态，并记下开始时间和结束时间。
+- 演算不用随机数，全程整数运算（1 格 = 1000 个长度单位，1 秒 = 10 步），所以前端拿同样的塔和当晚序号再跑一遍，得到的每一步都和服务端一模一样，只用来播放动画，不需要实时同步位置。
+- 前端按 `serverTime` 校准后的时间播放，中途断线重连会直接跳到当前进度。播放结束前，天亮/失败/通关不会显示出来。
+- 小偷、塔、组合和每晚的波次都写在 `logic.js` 开头，改数值只动那里。
 
 ## 添加一个新游戏
 

@@ -97,6 +97,7 @@ export class GameRoom extends DurableObject {
 		const result = GAMES[room.game].applyAction(room.state, action, {
 			seat: player.seat,
 			playerCount: room.players.length,
+			now: Date.now(),
 		});
 		if (result.error) {
 			ws.send(JSON.stringify({ type: "error", message: result.error }));
@@ -147,6 +148,7 @@ export class GameRoom extends DurableObject {
 			try {
 				ws.send(JSON.stringify({
 					type: "state",
+					serverTime: Date.now(),
 					room: { code: room.code, game: room.game, players },
 					you: seat,
 					state: room.state,

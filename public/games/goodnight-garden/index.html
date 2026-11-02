@@ -1,0 +1,1570 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>晚安小菜园</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700&display=swap">
+<style>
+/* 布局：单列——标题和房间、两位玩家、今晚预告，中间是 9×13 的菜园地图，下面是操作区（白天建造/准备，夜里看戏发表情） */
+:root {
+	--cream: #fff8f0;
+	--ink: #4a3a33;
+	--muted: #8a7568;
+	--line: #f3e3d6;
+	--pink: #ff9db7;
+	--pink-deep: #d94875;
+	--pink-soft: #ffe5ec;
+	--mint: #7adcc4;
+	--mint-deep: #137a66;
+	--mint-soft: #ddf5ee;
+	--lav: #b6a2f4;
+	--lav-deep: #6647b8;
+	--lav-soft: #e8e1ff;
+	--butter: #f7c85e;
+	--butter-soft: #fff1c7;
+	--panel: #ffffff;
+	--grass: #e4f3d4;
+	--grass-dot: #d2ebbd;
+	--path: #f6e4c8;
+	--night: #4b4879;
+	--night-dot: #6a66a3;
+	--night-path: #6d6798;
+	--font-display: "ZCOOL KuaiLe", "PingFang SC", "Microsoft YaHei", sans-serif;
+	--font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+	color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	background:
+		radial-gradient(42vmax 42vmax at 0% 0%, rgba(255, 229, 236, 0.95), transparent 70%),
+		radial-gradient(36vmax 36vmax at 100% 25%, rgba(221, 245, 238, 0.95), transparent 70%),
+		radial-gradient(44vmax 40vmax at 30% 105%, rgba(232, 225, 255, 0.9), transparent 70%),
+		var(--cream);
+	background-attachment: fixed;
+	color: var(--ink);
+	font-family: var(--font-body);
+	font-size: 14px;
+	padding-left: max(16px, env(safe-area-inset-left, 0px));
+	padding-right: max(16px, env(safe-area-inset-right, 0px));
+	padding-block: 10px 24px;
+	transition: background-color 0.6s;
+}
+
+body.is-night { background-color: #ece8fb; }
+
+.wrap { max-width: 520px; margin: 0 auto; }
+.ico { display: block; width: 100%; height: 100%; }
+
+.stage {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	max-width: 440px;
+	margin: 0 auto;
+}
+
+.bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+}
+
+.title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.title > .ico { flex: none; width: 40px; height: 40px; }
+
+.bar h1 {
+	margin: 0;
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-size: 1.45rem;
+	line-height: 1.1;
+	letter-spacing: 0.04em;
+	white-space: nowrap;
+}
+
+.bar h1 a { color: inherit; text-decoration: none; }
+
+.meta {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--muted);
+	font-size: 0.8rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.meta > span { white-space: nowrap; }
+.meta .basket { display: flex; align-items: center; gap: 3px; }
+.meta .basket .ico { width: 18px; height: 18px; }
+.meta b { color: var(--pink-deep); }
+.meta .basket.hit { animation: shake 0.4s; }
+
+@keyframes shake {
+	20%, 60% { transform: translateX(-3px); }
+	40%, 80% { transform: translateX(3px); }
+}
+
+.room { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.room > span { display: flex; flex-direction: column; line-height: 1.2; }
+
+.room code {
+	font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+	font-size: 0.95rem;
+	letter-spacing: 0.12em;
+	color: var(--ink);
+}
+
+.btn {
+	font-family: var(--font-display);
+	font-size: 1rem;
+	border: 0;
+	border-radius: 999px;
+	padding: 8px 18px;
+	color: #fff;
+	background: linear-gradient(180deg, #e8638d, var(--pink-deep));
+	box-shadow: 0 4px 0 #b9375f, 0 10px 20px rgba(217, 72, 117, 0.2);
+	cursor: pointer;
+	white-space: nowrap;
+	touch-action: manipulation;
+}
+
+.btn.small {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.85rem;
+	padding: 3px 12px 3px 4px;
+	color: var(--lav-deep);
+	background: var(--panel);
+	box-shadow: 0 3px 0 #d9cff9, 0 6px 14px rgba(102, 71, 184, 0.12);
+}
+
+.btn.small .ico { width: 24px; height: 24px; }
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #b9375f; }
+.btn.small:active { box-shadow: 0 1px 0 #d9cff9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.ghost { background: var(--panel); color: var(--ink); box-shadow: 0 4px 0 var(--line), 0 10px 20px rgba(170, 110, 90, 0.1); }
+.btn.ghost:active:not(:disabled) { box-shadow: 0 1px 0 var(--line); }
+.btn.night-btn { background: linear-gradient(180deg, #7f6fd6, var(--lav-deep)); box-shadow: 0 4px 0 #4f3896, 0 10px 20px rgba(102, 71, 184, 0.25); }
+.btn.night-btn:active:not(:disabled) { box-shadow: 0 1px 0 #4f3896; }
+
+button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outline-offset: 2px; }
+
+.players {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.player {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	padding: 3px 10px 3px 3px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.65);
+	border: 2px solid transparent;
+	font-size: 0.8rem;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.player:last-child { flex-direction: row-reverse; padding: 3px 3px 3px 10px; text-align: right; }
+.player.ready { border-color: var(--mint); box-shadow: 0 6px 16px rgba(19, 122, 102, 0.15); }
+.player.offline { opacity: 0.55; }
+.player.offline .avatar .ico { filter: grayscale(1); }
+.player.empty .avatar .ico { opacity: 0.35; }
+
+.avatar {
+	position: relative;
+	flex: none;
+	width: 34px;
+	height: 34px;
+	padding: 3px;
+	border-radius: 50%;
+	background: var(--pink-soft);
+}
+
+#player-1 .avatar { background: var(--butter-soft); }
+
+.dot {
+	position: absolute;
+	right: -1px;
+	bottom: -1px;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	border: 2px solid #fff;
+	background: var(--mint);
+}
+
+.player.offline .dot, .player.empty .dot { background: #cdbfb6; }
+
+.who { min-width: 0; line-height: 1.25; }
+.who .name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who .sub { display: flex; align-items: center; gap: 3px; color: var(--muted); font-size: 0.72rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.player:last-child .who .sub { justify-content: flex-end; }
+.who .sub .ico { width: 13px; height: 13px; }
+
+.bubble {
+	position: absolute;
+	bottom: calc(100% + 4px);
+	left: 12px;
+	z-index: 5;
+	padding: 3px 10px;
+	border-radius: 12px 12px 12px 4px;
+	background: var(--panel);
+	box-shadow: 0 6px 16px rgba(150, 90, 70, 0.2);
+	font-family: var(--font-display);
+	font-size: 0.95rem;
+	white-space: nowrap;
+	pointer-events: none;
+	animation: bubble 2.2s ease-out forwards;
+}
+
+.player:last-child .bubble { left: auto; right: 12px; border-radius: 12px 12px 4px 12px; }
+
+@keyframes bubble {
+	0% { opacity: 0; transform: translateY(6px) scale(0.8); }
+	12% { opacity: 1; transform: none; }
+	80% { opacity: 1; }
+	100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.banner {
+	font-family: var(--font-display);
+	font-size: 1rem;
+	color: var(--muted);
+	white-space: nowrap;
+	text-align: center;
+}
+
+.banner.hot { color: var(--pink-deep); }
+
+.forecast {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 4px 10px;
+	min-height: 26px;
+	color: var(--muted);
+	font-size: 0.78rem;
+}
+
+.forecast .foe { display: flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; }
+.forecast .foe .ico { width: 22px; height: 22px; }
+
+.map {
+	--c: 36px;
+	position: relative;
+	flex: none;
+	border-radius: 18px;
+	overflow: hidden;
+	background:
+		radial-gradient(circle at 30% 30%, var(--grass-dot) 0 2px, transparent 3px) 0 0 / 22px 22px,
+		var(--grass);
+	box-shadow: 0 0 0 3px #fff, 0 14px 30px rgba(120, 150, 90, 0.18);
+	transition: background-color 0.8s;
+	touch-action: manipulation;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.map.night {
+	background:
+		radial-gradient(circle at 20% 30%, rgba(255, 246, 200, 0.85) 0 1px, transparent 2px) 0 0 / 53px 47px,
+		radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.6) 0 1px, transparent 2px) 0 0 / 37px 41px,
+		var(--night);
+	box-shadow: 0 0 0 3px #fff, 0 14px 30px rgba(75, 72, 121, 0.3);
+}
+
+.layer { position: absolute; inset: 0; }
+.layer.units, .layer.fx { pointer-events: none; }
+
+.tile-path, .spot, .start, .crate {
+	position: absolute;
+	width: var(--c);
+	height: var(--c);
+}
+
+.tile-path { background: var(--path); transition: background-color 0.8s; }
+.map.night .tile-path { background: var(--night-path); }
+
+.start {
+	display: grid;
+	place-items: center;
+	color: rgba(138, 117, 104, 0.7);
+	font-size: calc(var(--c) * 0.42);
+}
+
+.map.night .start { color: rgba(255, 255, 255, 0.5); }
+
+.crate { padding: 2px; z-index: 2; }
+.crate.hit { animation: shake 0.4s; }
+
+.spot {
+	padding: 3px;
+	cursor: pointer;
+}
+
+.spot::before {
+	content: "";
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: 30%;
+	border: 2px dashed rgba(102, 71, 184, 0.35);
+	background: rgba(255, 255, 255, 0.35);
+}
+
+.spot:hover::before { background: rgba(255, 255, 255, 0.75); }
+
+.tower {
+	position: absolute;
+	width: var(--c);
+	height: var(--c);
+	padding: 2px;
+	border: 0;
+	border-radius: 30%;
+	background: rgba(255, 255, 255, 0.72);
+	box-shadow: inset 0 0 0 2px var(--pink), 0 3px 8px rgba(120, 90, 70, 0.18);
+	cursor: pointer;
+	z-index: 3;
+}
+
+.tower.seat-1 { box-shadow: inset 0 0 0 2px var(--butter), 0 3px 8px rgba(120, 90, 70, 0.18); }
+.tower.selected { outline: 3px solid var(--lav-deep); outline-offset: 1px; }
+.map.night .tower { background: rgba(255, 252, 238, 0.92); box-shadow: inset 0 0 0 2px rgba(255, 230, 160, 0.9), 0 0 14px rgba(255, 228, 150, 0.55); cursor: default; }
+.tower.fresh { animation: grow 0.35s cubic-bezier(.3, 1.6, .5, 1); }
+
+@keyframes grow {
+	from { transform: scale(0.3); }
+	to { transform: none; }
+}
+
+.pips {
+	position: absolute;
+	left: 50%;
+	bottom: -3px;
+	display: flex;
+	gap: 2px;
+	transform: translateX(-50%);
+}
+
+.pips i { width: 5px; height: 5px; border-radius: 50%; background: var(--lav-deep); box-shadow: 0 0 0 1.5px #fff; }
+
+.spark {
+	position: absolute;
+	top: -5px;
+	right: -5px;
+	width: 15px;
+	height: 15px;
+	display: grid;
+	place-items: center;
+	border-radius: 50%;
+	background: var(--pink-deep);
+	color: #fff;
+	font-size: 9px;
+	box-shadow: 0 0 0 2px #fff;
+}
+
+.range {
+	position: absolute;
+	border-radius: 50%;
+	border: 2px dashed rgba(102, 71, 184, 0.55);
+	background: rgba(182, 162, 244, 0.16);
+	pointer-events: none;
+	z-index: 2;
+}
+
+.unit {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: calc(var(--c) * 0.82);
+	height: calc(var(--c) * 0.82);
+	margin: calc(var(--c) * -0.41) 0 0 calc(var(--c) * -0.41);
+	will-change: transform;
+	z-index: 4;
+}
+
+.unit.boss {
+	width: calc(var(--c) * 1.2);
+	height: calc(var(--c) * 1.2);
+	margin: calc(var(--c) * -0.6) 0 0 calc(var(--c) * -0.6);
+}
+
+.unit .body { width: 100%; height: 100%; filter: drop-shadow(0 2px 2px rgba(30, 20, 60, 0.35)); }
+.unit.monkey .body { animation: hop 0.5s ease-in-out infinite; }
+.unit.eating .body { animation: nibble 0.3s ease-in-out infinite; }
+.unit.dazed .body { animation: daze 0.6s ease-in-out infinite; }
+
+@keyframes hop { 50% { transform: translateY(-18%); } }
+@keyframes nibble { 50% { transform: rotate(-8deg) scale(0.95); } }
+@keyframes daze { 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+
+.unit .meter {
+	position: absolute;
+	left: 12%;
+	right: 12%;
+	top: -6px;
+	height: 4px;
+	border-radius: 2px;
+	background: rgba(255, 255, 255, 0.55);
+	overflow: hidden;
+}
+
+.unit .meter i {
+	display: block;
+	height: 100%;
+	width: calc(var(--hp, 100) * 1%);
+	background: var(--butter);
+	border-radius: 2px;
+}
+
+.fx-drop, .fx-ring, .fx-pop, .fx-sleep, .fx-rainbow, .fx-heart, .fx-steal { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+.fx-drop {
+	width: 8px;
+	height: 8px;
+	margin: -4px 0 0 -4px;
+	border-radius: 50% 50% 50% 0;
+	background: #7fb3e8;
+	box-shadow: 0 0 0 1.5px #fff;
+	z-index: 5;
+}
+
+.fx-ring {
+	border-radius: 50%;
+	border: 3px solid rgba(255, 255, 255, 0.9);
+	background: radial-gradient(circle, transparent 55%, rgba(182, 162, 244, 0.35));
+	z-index: 1;
+}
+
+.fx-pop {
+	margin: -24px 0 0 -6px;
+	font-family: var(--font-display);
+	font-size: 16px;
+	color: var(--pink-deep);
+	text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+	z-index: 6;
+}
+
+.fx-rainbow {
+	height: 0;
+	border-radius: 999px 999px 0 0;
+	border: 5px solid transparent;
+	border-bottom: 0;
+	background: linear-gradient(90deg, #ff9db7, #ffe07a, #7adcc4, #7fb3e8, #b6a2f4) border-box;
+	-webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	z-index: 5;
+}
+
+.fx-heart { width: 16px; height: 16px; margin: -26px 0 0 -8px; z-index: 6; }
+
+.fx-sleep {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	z-index: 6;
+}
+
+.fx-sleep .zz { font-family: var(--font-display); font-size: 13px; color: #fff; text-shadow: 0 0 4px rgba(75, 72, 121, 0.9); }
+.fx-sleep .cloud {
+	position: relative;
+	display: grid;
+	place-items: center;
+	padding: 2px 8px 4px;
+	border-radius: 999px;
+	background: #fff;
+	box-shadow: 0 4px 10px rgba(30, 20, 60, 0.25);
+}
+
+.fx-sleep .cloud .ico { opacity: 0.85; }
+
+.fx-steal {
+	font-family: var(--font-display);
+	font-size: 18px;
+	color: var(--pink-deep);
+	text-shadow: 0 0 4px #fff, 0 0 4px #fff;
+	z-index: 7;
+}
+
+.dock {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dock-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+.wallet { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+.wallet .ico { width: 22px; height: 22px; }
+.wallet b { font-family: var(--font-display); font-weight: 400; font-size: 1.3rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.chip {
+	border: 0;
+	border-radius: 999px;
+	padding: 5px 12px;
+	background: var(--pink-soft);
+	color: var(--pink-deep);
+	font: inherit;
+	font-size: 0.8rem;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+.chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.palette { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+
+.kind {
+	position: relative;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	column-gap: 6px;
+	align-items: center;
+	padding: 6px 8px 6px 6px;
+	border: 0;
+	border-radius: 16px;
+	background: var(--panel);
+	color: var(--ink);
+	box-shadow: 0 4px 0 var(--line), 0 8px 18px rgba(170, 110, 90, 0.1);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+.kind .ico { grid-row: span 2; width: 34px; height: 34px; }
+.kind b { font-family: var(--font-display); font-weight: 400; font-size: 0.95rem; }
+.kind small { display: flex; align-items: center; gap: 2px; color: var(--muted); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+.kind small .ico { grid-row: auto; width: 12px; height: 12px; }
+.kind.selected { box-shadow: inset 0 0 0 2px var(--lav-deep), 0 4px 0 #d9cff9; background: var(--lav-soft); }
+.kind:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sheet {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 4px 10px;
+	padding: 10px 12px;
+	border-radius: 18px;
+	background: var(--panel);
+	box-shadow: 0 8px 18px rgba(170, 110, 90, 0.12);
+}
+
+.sheet > .ico { grid-row: span 3; width: 46px; height: 46px; }
+.sheet h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; }
+.sheet h3 small { font-family: var(--font-body); font-size: 0.72rem; color: var(--muted); margin-left: 4px; }
+.sheet p { margin: 0; color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
+.sheet .combo { color: var(--pink-deep); }
+.sheet .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.sheet .acts .btn { font-size: 0.85rem; padding: 5px 14px; }
+
+.ready-btn { width: 100%; font-size: 1.1rem; padding: 10px 18px; }
+
+.hint { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.6; text-align: center; text-wrap: balance; }
+
+.tally {
+	display: flex;
+	justify-content: center;
+	gap: 16px;
+	color: var(--muted);
+	font-size: 0.85rem;
+}
+
+.tally b { font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; color: var(--ink); }
+
+.emotes { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.emotes .chip { background: var(--lav-soft); color: var(--lav-deep); }
+
+.toast {
+	position: fixed;
+	left: 50%;
+	bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+	transform: translateX(-50%);
+	z-index: 2000;
+	padding: 10px 18px;
+	border-radius: 999px;
+	background: rgba(74, 58, 51, 0.92);
+	color: #fff;
+	font-size: 0.85rem;
+	box-shadow: 0 8px 24px rgba(74, 58, 51, 0.25);
+	white-space: nowrap;
+}
+
+.overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 1000;
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	background: rgba(255, 248, 240, 0.55);
+	-webkit-backdrop-filter: blur(4px);
+	backdrop-filter: blur(4px);
+	border-radius: 24px;
+}
+
+.panel {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	width: min(340px, 100%);
+	padding: 22px 18px 20px;
+	border-radius: 28px;
+	background: var(--panel);
+	border: 1px solid var(--line);
+	box-shadow: 0 18px 44px rgba(150, 90, 70, 0.22);
+	text-align: center;
+}
+
+.panel-icon {
+	width: 76px;
+	height: 76px;
+	padding: 8px;
+	margin-top: -4px;
+	border-radius: 50%;
+	background: var(--mint-soft);
+	animation: float 3s ease-in-out infinite;
+}
+
+.panel-icon.bare { padding: 0; background: none; }
+
+@keyframes float {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-5px); }
+}
+
+.panel h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.6rem; text-wrap: balance; }
+.panel p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.7; text-wrap: pretty; }
+.panel .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 4px; }
+
+.panel input {
+	width: 100%;
+	padding: 10px 14px;
+	border-radius: 999px;
+	border: 2px solid var(--line);
+	background: #fff;
+	color: var(--ink);
+	font: inherit;
+	font-size: 1rem;
+	text-align: center;
+}
+
+.panel input:focus { border-color: var(--pink); outline: none; }
+
+.invite-link {
+	width: 100%;
+	padding: 8px 12px;
+	border-radius: 14px;
+	background: var(--lav-soft);
+	color: var(--lav-deep);
+	font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+	font-size: 0.78rem;
+	word-break: break-all;
+	user-select: all;
+}
+
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; }
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 10px 8px;
+	border: 0;
+	border-radius: 16px;
+	background: var(--butter-soft);
+	color: var(--ink);
+	box-shadow: 0 4px 0 #f3dca0;
+	font: inherit;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+
+.card:nth-child(2) { background: var(--pink-soft); box-shadow: 0 4px 0 #f6c2d1; }
+.card:nth-child(3) { background: var(--mint-soft); box-shadow: 0 4px 0 #b8e6d9; }
+.card b { font-family: var(--font-display); font-weight: 400; font-size: 1rem; }
+.card small { color: var(--muted); font-size: 0.72rem; line-height: 1.45; }
+.card.chosen { outline: 3px solid var(--lav-deep); }
+.card:disabled { cursor: default; }
+.card:disabled:not(.chosen) { opacity: 0.45; }
+
+.hold-btn { width: 100%; font-size: 1.1rem; padding: 12px 18px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.hold-btn.holding { transform: translateY(3px) scale(0.98); box-shadow: 0 1px 0 #b9375f, 0 0 0 6px rgba(255, 157, 183, 0.35); }
+.hold-state { min-height: 1.4em; color: var(--pink-deep); font-size: 0.85rem; }
+
+@media (prefers-reduced-motion: reduce) {
+	.unit .body, .panel-icon, .tower.fresh, .bubble { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<header class="bar">
+			<div class="title">
+				<svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#sunflower"/></svg>
+				<div>
+					<h1><a href="/">晚安小菜园</a></h1>
+					<div class="meta">
+						<span id="night-label">第 1 夜 / 5</span>
+						<span class="basket" id="basket-wrap" title="菜筐里还有几颗菜"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#crate"/></svg><b id="basket">20</b></span>
+					</div>
+				</div>
+			</div>
+			<div class="room">
+				<span>房间 <code id="room-code">------</code></span>
+				<button class="btn small" id="btn-invite" type="button"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#invite"/></svg>邀请</button>
+			</div>
+		</header>
+
+		<div class="players" aria-live="polite">
+			<div class="player empty" id="player-0">
+				<span class="avatar"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#rabbit"/></svg><i class="dot"></i></span>
+				<span class="who"><span class="name">等待加入</span><span class="sub"></span></span>
+			</div>
+			<div class="banner" id="banner">连接中…</div>
+			<div class="player empty" id="player-1">
+				<span class="avatar"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#cat"/></svg><i class="dot"></i></span>
+				<span class="who"><span class="name">等待加入</span><span class="sub"></span></span>
+			</div>
+		</div>
+
+		<div class="forecast" id="forecast"></div>
+
+		<div class="map" id="map" aria-label="菜园地图">
+			<div class="layer" id="ground"></div>
+			<div class="layer" id="towers"></div>
+			<div class="layer units" id="units"></div>
+			<div class="layer fx" id="fx"></div>
+		</div>
+
+		<section class="dock" id="dock">
+			<div class="dock" id="dock-day">
+				<div class="dock-row">
+					<div class="wallet"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#star"/></svg><b id="my-stars">0</b>我的星星</div>
+					<button class="chip" id="btn-gift" type="button">送对方 5 颗星星</button>
+				</div>
+				<div class="palette" id="palette"></div>
+				<div class="sheet" id="sheet" hidden></div>
+				<button class="btn ready-btn" id="btn-ready" type="button">准备好了，天黑吧</button>
+				<p class="hint" id="hint"></p>
+			</div>
+			<div class="dock" id="dock-night" hidden>
+				<div class="tally" id="tally"></div>
+			</div>
+			<div class="emotes" id="emotes"></div>
+		</section>
+
+		<div class="overlay" id="overlay" hidden>
+			<div class="panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+				<div class="panel-icon" id="dialog-icon" aria-hidden="true"></div>
+				<h2 id="dialog-title"></h2>
+				<p id="dialog-text"></p>
+				<div class="invite-link" id="dialog-link" hidden></div>
+				<form id="name-form" hidden>
+					<input id="name-input" name="name" maxlength="16" autocomplete="nickname" placeholder="你的昵称，比如 小王" required>
+				</form>
+				<div class="cards" id="dialog-cards" hidden></div>
+				<div id="dialog-extra"></div>
+				<div class="actions" id="dialog-actions"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="module">
+import {
+	meta, COLS, ROWS, CELL, TICK_MS, NIGHTS, ROLES, TOWERS, COMBOS, CRITTERS, CARDS, EMOTES, WAVES, MAX_LEVEL,
+	PATHS, CRATE, PATH_CELLS, NIGHT_BONUS, REVIVE_BASKET, canBuildAt, comboMap, towerRange, upgradeCost, simulateNight, settle,
+} from "./logic.js";
+import { connectRoom, createRoom, getName, setName, inviteUrl, copyText, normalizeCode } from "/shared/room-client.js";
+import { icon } from "/shared/icons.js";
+
+const $ = (selector) => document.querySelector(selector);
+const mapEl = $("#map");
+const groundEl = $("#ground");
+const towersEl = $("#towers");
+const unitsEl = $("#units");
+const fxEl = $("#fx");
+const overlay = $("#overlay");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const BARE_ICONS = new Set(["invite", "heart", "confetti", "flower", "sprout"]);
+
+let C = 36;
+let groundSize = 0;
+let roomCode = "";
+let conn = null;
+let connection = "connecting";
+let view = null;          // 服务端最新广播 { room, you, state }
+let clockOffset = 0;      // 服务端时间 - 本机时间
+let fatalMessage = "";
+let selectedKind = null;
+let selectedTower = null;
+let freshTower = null;
+let replay = null;
+let settleTimer = 0;
+let toastTimer = 0;
+let holdTimer = 0;
+
+const serverNow = () => Date.now() + clockOffset;
+const mySeat = () => view?.you ?? null;
+const playerCount = () => view?.room.players.length || 0;
+const playerOf = (seat) => view?.room.players.find((item) => item.seat === seat);
+const nameOf = (seat) => playerOf(seat)?.name || ROLES[seat].name;
+
+function toast(message) {
+	const el = $("#toast");
+	el.textContent = message;
+	el.hidden = false;
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => { el.hidden = true; }, 2400);
+}
+
+function send(action) {
+	if (!conn || !conn.send(action)) toast("正在重新连接，请稍等");
+}
+
+function current() {
+	return view ? settle(structuredClone(view.state), serverNow()) : null;
+}
+
+function iconEl(name, className = "ico") {
+	return icon(name, className);
+}
+
+function place(el, x, y, size = C) {
+	el.style.left = `${x}px`;
+	el.style.top = `${y}px`;
+	el.style.width = `${size}px`;
+	el.style.height = `${size}px`;
+	return el;
+}
+
+// ---------- 地图 ----------
+
+function drawGround() {
+	if (groundSize === C) return;
+	groundSize = C;
+	mapEl.style.setProperty("--c", `${C}px`);
+	mapEl.style.width = `${COLS * C}px`;
+	mapEl.style.height = `${ROWS * C}px`;
+	const nodes = [];
+	PATH_CELLS.forEach((key) => {
+		const [x, y] = key.split(",").map(Number);
+		const tile = document.createElement("div");
+		tile.className = "tile-path";
+		nodes.push(place(tile, x * C, y * C));
+	});
+	Object.values(PATHS).forEach((points) => {
+		const [x, y] = points[0];
+		const start = document.createElement("div");
+		start.className = "start";
+		start.textContent = x === 0 ? "→" : "←";
+		nodes.push(place(start, x * C, y * C));
+	});
+	const crate = document.createElement("div");
+	crate.className = "crate";
+	crate.id = "crate";
+	crate.append(iconEl("crate"));
+	nodes.push(place(crate, CRATE[0] * C, CRATE[1] * C));
+	groundEl.replaceChildren(...nodes);
+}
+
+function drawTowers(S) {
+	const combos = comboMap(S.towers);
+	const night = S.status === "night";
+	const nodes = S.towers.map((tower) => {
+		const def = TOWERS[tower.kind];
+		const button = document.createElement("button");
+		button.type = "button";
+		button.className = `tower seat-${def.seat}` + (tower.id === selectedTower ? " selected" : "") + (tower.id === freshTower ? " fresh" : "");
+		button.dataset.id = String(tower.id);
+		button.setAttribute("aria-label", `${def.name} ${tower.level} 级`);
+		button.disabled = night;
+		button.append(iconEl(def.icon));
+		const pips = document.createElement("span");
+		pips.className = "pips";
+		pips.append(...Array.from({ length: tower.level }, () => document.createElement("i")));
+		button.append(pips);
+		if (combos.get(tower.id)?.size) {
+			const spark = document.createElement("span");
+			spark.className = "spark";
+			spark.textContent = "✦";
+			button.append(spark);
+		}
+		return place(button, tower.x * C, tower.y * C);
+	});
+	freshTower = null;
+
+	const tower = S.towers.find((item) => item.id === selectedTower);
+	if (tower && !night) {
+		const range = towerRange(tower, combos) / CELL * C;
+		const ring = document.createElement("div");
+		ring.className = "range";
+		nodes.push(place(ring, (tower.x + 0.5) * C - range, (tower.y + 0.5) * C - range, range * 2));
+	}
+	if (selectedKind && !night && S.status === "day") {
+		for (let x = 0; x < COLS; x += 1) {
+			for (let y = 0; y < ROWS; y += 1) {
+				if (!canBuildAt(S, x, y)) continue;
+				const spot = document.createElement("div");
+				spot.className = "spot";
+				spot.dataset.x = String(x);
+				spot.dataset.y = String(y);
+				nodes.push(place(spot, x * C, y * C));
+			}
+		}
+	}
+	towersEl.replaceChildren(...nodes);
+}
+
+// ---------- 夜晚回放：用同样的输入在本地再演算一遍，按服务端时间对齐播放 ----------
+
+function stopReplay() {
+	if (!replay) return;
+	cancelAnimationFrame(replay.raf);
+	replay = null;
+	unitsEl.replaceChildren();
+	fxEl.replaceChildren();
+}
+
+function ensureReplay(S) {
+	if (S.status !== "night" || !S.run) {
+		stopReplay();
+		return;
+	}
+	const key = `${S.run.night}:${S.run.startedAt}`;
+	if (replay?.key === key) return;
+	stopReplay();
+	const sim = simulateNight({ night: S.run.night, towers: S.towers, basket: S.run.before.basket }, { record: true });
+	const towerPos = new Map(S.towers.map((tower) => [tower.id, {
+		x: (tower.x + 0.5) * CELL,
+		y: (tower.y + 0.5) * CELL,
+		range: towerRange(tower, comboMap(S.towers)),
+	}]));
+	replay = {
+		key, sim, towerPos,
+		startedAt: S.run.startedAt,
+		basket: S.run.before.basket,
+		kinds: new Map(sim.units.map((unit) => [unit.id, unit.kind])),
+		els: new Map(),
+		effectIndex: 0,
+		slept: 0,
+		stolen: 0,
+		raf: 0,
+	};
+	replay.raf = requestAnimationFrame(step);
+}
+
+function unitElement(id) {
+	const kind = replay.kinds.get(id);
+	const el = document.createElement("div");
+	el.className = `unit ${kind}` + (CRITTERS[kind].boss ? " boss" : "");
+	el.append(iconEl(CRITTERS[kind].icon, "ico body"));
+	const meter = document.createElement("span");
+	meter.className = "meter";
+	meter.append(document.createElement("i"));
+	el.append(meter);
+	return el;
+}
+
+const px = (value) => value / CELL * C;
+
+function animate(el, keyframes, options) {
+	fxEl.append(el);
+	const animation = el.animate(keyframes, options);
+	animation.onfinish = () => el.remove();
+}
+
+function playEffect(effect, positions) {
+	if (reduceMotion && effect.type !== "steal") return;
+	const tower = replay.towerPos.get(effect.tower);
+	const unit = positions.get(effect.unit);
+	if (effect.type === "shot" && tower && unit) {
+		const drop = document.createElement("div");
+		drop.className = "fx-drop";
+		animate(drop, [
+			{ transform: `translate(${px(tower.x)}px, ${px(tower.y)}px)` },
+			{ transform: `translate(${px(unit[1])}px, ${px(unit[2])}px)` },
+		], { duration: 220, easing: "ease-in" });
+	} else if (effect.type === "ring" && tower) {
+		const size = px(tower.range) * 2;
+		const ring = document.createElement("div");
+		ring.className = "fx-ring";
+		ring.style.width = ring.style.height = `${size}px`;
+		ring.style.left = `${px(tower.x) - size / 2}px`;
+		ring.style.top = `${px(tower.y) - size / 2}px`;
+		animate(ring, [{ transform: "scale(0.25)", opacity: 0.9 }, { transform: "scale(1)", opacity: 0 }], { duration: 700, easing: "ease-out" });
+	} else if (effect.type === "rainbow" && tower) {
+		const size = px(tower.range) * 1.2;
+		const bow = document.createElement("div");
+		bow.className = "fx-rainbow";
+		bow.style.width = `${size}px`;
+		bow.style.height = `${size / 2}px`;
+		bow.style.left = `${px(tower.x) - size / 2}px`;
+		bow.style.top = `${px(tower.y) - size / 2}px`;
+		animate(bow, [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0 }], { duration: 1100 });
+	} else if (effect.type === "push" && unit) {
+		const pop = document.createElement("div");
+		pop.className = "fx-pop";
+		pop.textContent = "!";
+		pop.style.transform = `translate(${px(unit[1])}px, ${px(unit[2])}px)`;
+		animate(pop, [{ opacity: 1 }, { opacity: 0, marginTop: "-34px" }], { duration: 600 });
+	} else if (effect.type === "lure" && unit) {
+		const heart = iconEl("heart", "fx-heart");
+		heart.style.transform = `translate(${px(unit[1])}px, ${px(unit[2])}px)`;
+		animate(heart, [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0, marginTop: "-36px" }], { duration: 900 });
+	} else if (effect.type === "sleep") {
+		const kind = replay.kinds.get(effect.unit);
+		const size = C * 0.7;
+		const box = document.createElement("div");
+		box.className = "fx-sleep";
+		box.innerHTML = '<span class="zz">z z z</span><span class="cloud"></span>';
+		const body = iconEl(CRITTERS[kind].icon);
+		body.style.width = body.style.height = `${size}px`;
+		box.querySelector(".cloud").append(body);
+		box.style.left = `${px(effect.x) - size / 2 - 8}px`;
+		box.style.top = `${px(effect.y) - size}px`;
+		animate(box, [
+			{ transform: "translateY(0) scale(0.6)", opacity: 0 },
+			{ transform: "translateY(-6px) scale(1)", opacity: 1, offset: 0.2 },
+			{ transform: `translateY(${-C * 2.2}px) scale(0.9)`, opacity: 0 },
+		], { duration: 1800, easing: "ease-out" });
+	} else if (effect.type === "steal") {
+		const text = document.createElement("div");
+		text.className = "fx-steal";
+		text.textContent = `-${effect.amount}`;
+		text.style.left = `${(CRATE[0] + 0.3) * C}px`;
+		text.style.top = `${(CRATE[1] - 0.3) * C}px`;
+		animate(text, [{ opacity: 1 }, { opacity: 0, transform: `translateY(${-C}px)` }], { duration: 900 });
+		[$("#crate"), $("#basket-wrap")].forEach((el) => {
+			el?.classList.remove("hit");
+			void el?.offsetWidth;
+			el?.classList.add("hit");
+		});
+	}
+}
+
+function step() {
+	if (!replay) return;
+	const { sim } = replay;
+	const t = (serverNow() - replay.startedAt) / TICK_MS;
+	const last = sim.frames.length - 1;
+	const i = Math.max(0, Math.min(last, Math.floor(t)));
+	const f = t >= last ? 0 : Math.max(0, t - Math.floor(t));
+	const frame = sim.frames[i];
+	const next = new Map((sim.frames[i + 1] || frame).map((row) => [row[0], row]));
+	const positions = new Map(frame.map((row) => [row[0], row]));
+	const seen = new Set();
+	frame.forEach(([id, x, y, hp, flag]) => {
+		seen.add(id);
+		let el = replay.els.get(id);
+		if (!el) {
+			el = unitElement(id);
+			replay.els.set(id, el);
+			unitsEl.append(el);
+		}
+		const n = next.get(id) || [id, x, y];
+		el.style.transform = `translate(${px(x + (n[1] - x) * f)}px, ${px(y + (n[2] - y) * f)}px)`;
+		el.style.setProperty("--hp", hp);
+		el.classList.toggle("eating", flag === 1);
+		el.classList.toggle("dazed", flag === 2);
+	});
+	replay.els.forEach((el, id) => {
+		if (seen.has(id)) return;
+		el.remove();
+		replay.els.delete(id);
+	});
+	while (replay.effectIndex < sim.effects.length && sim.effects[replay.effectIndex].tick <= i) {
+		const effect = sim.effects[replay.effectIndex];
+		replay.effectIndex += 1;
+		if (effect.type === "sleep") replay.slept += 1;
+		if (effect.type === "steal") replay.stolen += effect.amount;
+		// 断线重连追进度时跳过已经过去的特效
+		if (i - effect.tick < 6) playEffect(effect, positions);
+	}
+	$("#basket").textContent = String(Math.max(0, replay.basket - replay.stolen));
+	$("#tally").innerHTML = `<span>哄睡 <b>${replay.slept}</b> 只</span><span>被叼走 <b>${replay.stolen}</b> 颗菜</span>`;
+	replay.raf = requestAnimationFrame(step);
+}
+
+// ---------- 界面 ----------
+
+function fit() {
+	const width = document.querySelector(".wrap").clientWidth;
+	const byWidth = Math.floor(Math.min(width, 440) / COLS);
+	const byHeight = Math.floor((window.innerHeight - 330) / ROWS);
+	C = Math.max(26, Math.min(46, byWidth, byHeight));
+}
+
+function render() {
+	fit();
+	drawGround();
+	if (!view) return;
+	const S = current();
+	const seat = mySeat();
+	const night = S.status === "night";
+	document.body.classList.toggle("is-night", night);
+	mapEl.classList.toggle("night", night);
+	if (!night) {
+		$("#basket").textContent = String(S.basket);
+		if (selectedTower && !S.towers.some((tower) => tower.id === selectedTower)) selectedTower = null;
+	} else {
+		selectedKind = null;
+		selectedTower = null;
+	}
+	$("#night-label").textContent = `第 ${S.status === "night" ? S.run.night : S.night} 夜 / ${NIGHTS}`;
+	drawTowers(S);
+	ensureReplay(S);
+	renderPlayers(S);
+	renderForecast(S);
+	renderDock(S);
+	renderOverlay(S);
+	// 复活成功后按钮已经被换掉，收不到松手事件，这里停掉持续发送
+	if (S.status !== "fail") stopHolding();
+
+	clearTimeout(settleTimer);
+	if (night) settleTimer = setTimeout(render, Math.max(50, S.run.endsAt - serverNow() + 30));
+}
+
+function renderPlayers(S) {
+	const stars = S.status === "night" ? S.run.before.stars : S.stars;
+	[0, 1].forEach((seat) => {
+		const el = $(`#player-${seat}`);
+		const player = playerOf(seat);
+		el.querySelector(".name").textContent = player
+			? `${player.name}${seat === mySeat() ? "（你）" : ""}${player.online ? "" : " · 离线"}`
+			: "等待加入";
+		const sub = el.querySelector(".sub");
+		sub.replaceChildren(document.createTextNode(ROLES[seat].name), iconEl("star"), document.createTextNode(String(stars[seat])));
+		el.classList.toggle("empty", !player);
+		el.classList.toggle("offline", !!player && !player.online);
+		el.classList.toggle("ready", S.status === "day" && S.ready[seat]);
+	});
+	const banner = $("#banner");
+	const other = 1 - (mySeat() ?? 0);
+	let text = "白天 · 一起布置";
+	let hot = false;
+	if (connection !== "online") text = "重新连接中…";
+	else if (playerCount() < meta.minPlayers) text = "等对方加入";
+	else if (S.status === "night") text = "嘘，小偷来了";
+	else if (S.status === "dawn") text = "天亮啦";
+	else if (S.status === "fail") text = "菜被偷光了";
+	else if (S.status === "win") text = "守住啦";
+	else if (S.ready[mySeat()] && !S.ready[other]) text = `等${nameOf(other)}准备`;
+	else if (!S.ready[mySeat()] && S.ready[other]) {
+		text = `${nameOf(other)}准备好了`;
+		hot = true;
+	}
+	banner.textContent = text;
+	banner.classList.toggle("hot", hot);
+}
+
+function renderForecast(S) {
+	const el = $("#forecast");
+	if (S.status === "night") {
+		el.textContent = "两人一起看着菜园，可以在下面发表情";
+		return;
+	}
+	const night = Math.min(S.night, NIGHTS);
+	const counts = {};
+	(WAVES[night] || []).forEach(([kind, , count]) => { counts[kind] = (counts[kind] || 0) + count; });
+	const nodes = [document.createTextNode(`第 ${night} 夜会来：`)];
+	Object.entries(counts).forEach(([kind, count]) => {
+		const foe = document.createElement("span");
+		foe.className = "foe";
+		foe.title = `${CRITTERS[kind].name}：${CRITTERS[kind].desc}`;
+		foe.append(iconEl(CRITTERS[kind].icon), document.createTextNode(`×${count}`));
+		nodes.push(foe);
+	});
+	el.replaceChildren(...nodes);
+}
+
+function kindButton(S, kind, seat) {
+	const def = TOWERS[kind];
+	const cost = S.perks[seat].sale ? Math.ceil(def.cost / 2) : def.cost;
+	const button = document.createElement("button");
+	button.type = "button";
+	button.className = "kind" + (selectedKind === kind ? " selected" : "");
+	button.dataset.kind = kind;
+	button.title = def.desc;
+	button.disabled = S.status !== "day" || S.stars[seat] < cost || playerCount() < meta.minPlayers;
+	const name = document.createElement("b");
+	name.textContent = def.name;
+	const price = document.createElement("small");
+	price.append(iconEl("star"), document.createTextNode(cost < def.cost ? `${cost}（半价）` : String(cost)));
+	button.append(iconEl(def.icon), name, price);
+	return button;
+}
+
+function renderSheet(S, seat) {
+	const sheet = $("#sheet");
+	const tower = S.towers.find((item) => item.id === selectedTower);
+	if (!tower) {
+		sheet.hidden = true;
+		return;
+	}
+	const def = TOWERS[tower.kind];
+	const mine = def.seat === seat;
+	const combos = [...(comboMap(S.towers).get(tower.id) || [])].map((id) => COMBOS.find((combo) => combo.id === id));
+	sheet.hidden = false;
+	sheet.replaceChildren();
+	sheet.append(iconEl(def.icon));
+	const title = document.createElement("h3");
+	title.textContent = def.name;
+	const level = document.createElement("small");
+	level.textContent = `${tower.level} 级 · ${ROLES[def.seat].name}的`;
+	title.append(level);
+	const desc = document.createElement("p");
+	desc.textContent = def.desc;
+	sheet.append(title, desc);
+	if (combos.length) {
+		const combo = document.createElement("p");
+		combo.className = "combo";
+		combo.textContent = combos.map((item) => `✦ ${item.name}：${item.desc}`).join("；");
+		sheet.append(combo);
+	}
+	const acts = document.createElement("div");
+	acts.className = "acts";
+	if (mine) {
+		if (tower.level < MAX_LEVEL) {
+			const cost = S.perks[seat].polish ? 0 : upgradeCost(tower.kind, tower.level);
+			const up = document.createElement("button");
+			up.type = "button";
+			up.className = "btn";
+			up.textContent = cost ? `升级（${cost} 星星）` : "免费升级";
+			up.disabled = S.stars[seat] < cost;
+			up.addEventListener("click", () => send({ type: "upgrade", id: tower.id }));
+			acts.append(up);
+		}
+		const sell = document.createElement("button");
+		sell.type = "button";
+		sell.className = "btn ghost";
+		sell.textContent = `拆掉（退 ${Math.floor(tower.spent / 2)}）`;
+		sell.addEventListener("click", () => send({ type: "sell", id: tower.id }));
+		acts.append(sell);
+	} else {
+		const note = document.createElement("p");
+		note.textContent = `${ROLES[def.seat].name}负责升级和拆除；星星不够可以送给 TA。`;
+		acts.append(note);
+	}
+	sheet.append(acts);
+}
+
+function renderDock(S) {
+	const seat = mySeat();
+	const day = S.status !== "night";
+	$("#dock-day").hidden = !day || seat === null;
+	$("#dock-night").hidden = day;
+	if (seat === null) return;
+	$("#my-stars").textContent = String(S.status === "night" ? S.run.before.stars[seat] : S.stars[seat]);
+	$("#btn-gift").disabled = S.stars[seat] < 1 || playerCount() < meta.minPlayers;
+	$("#btn-gift").textContent = `送${nameOf(1 - seat)} ${Math.min(5, Math.max(1, S.stars[seat]))} 颗星星`;
+	$("#palette").replaceChildren(...ROLES[seat].towers.map((kind) => kindButton(S, kind, seat)));
+	renderSheet(S, seat);
+	const ready = $("#btn-ready");
+	ready.disabled = S.status !== "day" || playerCount() < meta.minPlayers;
+	ready.className = "btn ready-btn" + (S.ready[seat] ? " ghost" : " night-btn");
+	ready.textContent = S.ready[seat] ? "取消准备" : "准备好了，天黑吧";
+	const partner = ROLES[1 - seat];
+	$("#hint").textContent = selectedKind
+		? `点地图上的虚线格子放下${TOWERS[selectedKind].name}，再点一次卡片取消`
+		: `你是${ROLES[seat].name}，负责${ROLES[seat].towers.map((kind) => TOWERS[kind].name).join("、")}；${partner.name}负责${partner.towers.map((kind) => TOWERS[kind].name).join("、")}。两人的塔挨着会有组合效果 ✦`;
+}
+
+function showDialog({ title, text = "", iconName = "sunflower", link = "", actions = [], nameForm = false, cards = null, extra = null }) {
+	overlay.hidden = false;
+	const iconBox = $("#dialog-icon");
+	if (iconBox.dataset.icon !== iconName) {
+		iconBox.dataset.icon = iconName;
+		iconBox.replaceChildren(iconEl(iconName));
+	}
+	iconBox.classList.toggle("bare", BARE_ICONS.has(iconName));
+	$("#dialog-title").textContent = title;
+	$("#dialog-text").textContent = text;
+	$("#dialog-link").hidden = !link;
+	$("#dialog-link").textContent = link;
+	$("#name-form").hidden = !nameForm;
+	$("#dialog-cards").hidden = !cards;
+	if (cards) $("#dialog-cards").replaceChildren(...cards);
+	$("#dialog-extra").replaceChildren(...(extra ? [extra] : []));
+	$("#dialog-actions").replaceChildren(...actions.map(([label, handler, ghost]) => {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.className = ghost ? "btn ghost" : "btn";
+		button.textContent = label;
+		button.addEventListener("click", handler);
+		return button;
+	}));
+}
+
+function summary(S) {
+	const r = S.run?.result;
+	if (!r) return "";
+	return `这一夜哄睡了 ${Object.values(r.slept).reduce((a, b) => a + b, 0)} 只小偷，被叼走 ${r.stolen} 颗菜。`;
+}
+
+function renderOverlay(S) {
+	if (fatalMessage) {
+		showDialog({ title: "进不了这个房间", text: fatalMessage, iconName: "sheep", actions: [["回首页", () => { location.href = "/"; }, false]] });
+		return;
+	}
+	const seat = mySeat();
+	if (playerCount() < meta.minPlayers) {
+		showDialog({
+			title: "等另一位玩家",
+			text: `把链接发给对方，对方打开后就能一起守菜园。房间码 ${roomCode}`,
+			iconName: "invite",
+			link: inviteUrl(meta.id, roomCode),
+			actions: [["复制邀请链接", copyInvite, false]],
+		});
+		return;
+	}
+	if (S.status === "dawn" && S.cards && seat !== null) {
+		const picked = S.cards.picked[seat];
+		const cards = S.cards.options[seat].map((key, index) => {
+			const card = document.createElement("button");
+			card.type = "button";
+			card.className = "card" + (picked === index ? " chosen" : "");
+			card.disabled = picked !== null;
+			card.innerHTML = "<b></b><small></small>";
+			card.querySelector("b").textContent = CARDS[key].name;
+			card.querySelector("small").textContent = CARDS[key].desc;
+			card.addEventListener("click", () => send({ type: "pick", index }));
+			return card;
+		});
+		showDialog({
+			title: "天亮啦",
+			iconName: "flower",
+			text: `${summary(S)}每人得到 ${S.run.result.earned + NIGHT_BONUS} 颗星星。` +
+				(picked === null ? "选一张惊喜卡：" : `等${nameOf(1 - seat)}选卡…`),
+			cards,
+		});
+		return;
+	}
+	if (S.status === "fail") {
+		const extra = document.createElement("div");
+		extra.style.width = "100%";
+		if (S.revive > 0) {
+			const hold = document.createElement("button");
+			hold.type = "button";
+			hold.className = "btn hold-btn";
+			hold.textContent = "一起按住 · 再守一次";
+			bindHold(hold);
+			const state = document.createElement("div");
+			state.className = "hold-state";
+			const other = 1 - seat;
+			const otherHolding = serverNow() - S.holds[other] < 700;
+			state.textContent = otherHolding ? `${nameOf(other)}正按着，快一起按！` : "两人同时按住才会生效，只有一次机会";
+			extra.append(hold, state);
+			if (otherHolding) setTimeout(render, 750);
+		}
+		showDialog({
+			title: "菜被偷光了",
+			iconName: "sheep",
+			text: `第 ${S.run?.night || S.night} 夜没守住。${summary(S)}` + (S.revive > 0 ? `复活会回到这一夜的白天，菜筐补到 ${REVIVE_BASKET} 颗。` : ""),
+			extra,
+			actions: [["从第 1 夜重来", () => send({ type: "restart" }), S.revive > 0]],
+		});
+		return;
+	}
+	if (S.status === "win") {
+		showDialog({
+			title: "守住了 5 个夜晚",
+			iconName: "confetti",
+			text: `${summary(S)}菜筐里还剩 ${S.basket} 颗菜，晚安，小菜园。`,
+			actions: [["再守一座菜园", () => send({ type: "restart" }), false]],
+		});
+		return;
+	}
+	overlay.hidden = true;
+}
+
+function stopHolding() {
+	clearInterval(holdTimer);
+	holdTimer = 0;
+}
+
+// 按住期间每次广播都会重画弹窗、换掉按钮，所以松手事件挂在整个页面上
+function bindHold(button) {
+	button.classList.toggle("holding", !!holdTimer);
+	const start = (event) => {
+		event.preventDefault();
+		if (holdTimer) return;
+		button.classList.add("holding");
+		send({ type: "hold" });
+		holdTimer = setInterval(() => send({ type: "hold" }), 300);
+	};
+	button.addEventListener("pointerdown", start);
+	button.addEventListener("keydown", (event) => { if (event.key === " " || event.key === "Enter") start(event); });
+	button.addEventListener("contextmenu", (event) => event.preventDefault());
+}
+
+["pointerup", "pointercancel", "keyup", "blur"].forEach((type) => window.addEventListener(type, () => {
+	if (!holdTimer) return;
+	stopHolding();
+	document.querySelector(".hold-btn")?.classList.remove("holding");
+}));
+
+async function copyInvite() {
+	const copied = await copyText(inviteUrl(meta.id, roomCode));
+	toast(copied ? "邀请链接已复制，发给对方吧" : "复制失败，请手动选中链接复制");
+}
+
+function showEmote(seat, name) {
+	const chip = $(`#player-${seat}`);
+	chip.querySelector(".bubble")?.remove();
+	const bubble = document.createElement("span");
+	bubble.className = "bubble";
+	bubble.textContent = EMOTES[name];
+	chip.append(bubble);
+	setTimeout(() => bubble.remove(), 2300);
+}
+
+function onServerMessage(message) {
+	clockOffset = message.serverTime ? message.serverTime - Date.now() : clockOffset;
+	view = message;
+	const event = message.event;
+	if (event?.type === "emote") showEmote(event.seat, event.name);
+	if (event?.type === "build") freshTower = event.tower;
+	if (event?.type === "gift" && event.seat !== mySeat()) toast(`${nameOf(event.seat)}送了你 ${event.amount} 颗星星`);
+	if (event?.type === "revive") toast(`复活啦，菜筐补到 ${REVIVE_BASKET} 颗，重新布置一下吧`);
+	if (event?.type === "build" && event.seat === mySeat()) selectedKind = null;
+	render();
+}
+
+// ---------- 交互 ----------
+
+$("#palette").addEventListener("click", (event) => {
+	const button = event.target.closest(".kind");
+	if (!button || button.disabled) return;
+	selectedKind = selectedKind === button.dataset.kind ? null : button.dataset.kind;
+	selectedTower = null;
+	render();
+});
+
+mapEl.addEventListener("click", (event) => {
+	const S = view && current();
+	if (!S || S.status !== "day") return;
+	const spot = event.target.closest(".spot");
+	if (spot && selectedKind) {
+		send({ type: "build", kind: selectedKind, x: Number(spot.dataset.x), y: Number(spot.dataset.y) });
+		return;
+	}
+	const tower = event.target.closest(".tower");
+	selectedTower = tower && Number(tower.dataset.id) !== selectedTower ? Number(tower.dataset.id) : null;
+	if (tower) selectedKind = null;
+	render();
+});
+
+$("#btn-gift").addEventListener("click", () => {
+	const S = current();
+	send({ type: "gift", amount: Math.min(5, S.stars[mySeat()]) });
+});
+
+$("#btn-ready").addEventListener("click", () => {
+	const S = current();
+	send({ type: "ready", ready: !S.ready[mySeat()] });
+});
+
+$("#emotes").replaceChildren(...Object.entries(EMOTES).map(([name, label]) => {
+	const chip = document.createElement("button");
+	chip.type = "button";
+	chip.className = "chip";
+	chip.textContent = label;
+	chip.addEventListener("click", () => send({ type: "emote", name }));
+	return chip;
+}));
+
+$("#btn-invite").addEventListener("click", copyInvite);
+window.addEventListener("resize", render);
+
+function connect(name) {
+	conn = connectRoom(roomCode, {
+		name,
+		onState: onServerMessage,
+		onError: toast,
+		onFatal: (message) => {
+			fatalMessage = message;
+			renderOverlay(current() || {});
+		},
+		onStatus: (status) => {
+			connection = status;
+			if (view) render();
+			else $("#banner").textContent = status === "online" ? "加载中…" : "连接中…";
+		},
+	});
+}
+
+function askName() {
+	showDialog({
+		title: "先起个昵称",
+		text: "对方会在菜园里看到这个名字。",
+		iconName: "sprout",
+		nameForm: true,
+		actions: [["进入菜园", () => $("#name-form").requestSubmit(), false]],
+	});
+	const input = $("#name-input");
+	input.value = "";
+	input.focus();
+}
+
+$("#name-form").addEventListener("submit", (event) => {
+	event.preventDefault();
+	const name = $("#name-input").value.trim().slice(0, 16);
+	if (!name) return;
+	setName(name);
+	overlay.hidden = true;
+	connect(name);
+});
+
+async function start() {
+	render();
+	roomCode = normalizeCode(new URLSearchParams(location.search).get("room"));
+	if (!roomCode) {
+		try {
+			roomCode = await createRoom(meta.id);
+			history.replaceState(null, "", `?room=${roomCode}`);
+		} catch (error) {
+			fatalMessage = error.message;
+			renderOverlay({});
+			return;
+		}
+	}
+	$("#room-code").textContent = roomCode;
+	const name = getName();
+	if (name) connect(name);
+	else askName();
+}
+
+start();
+</script>
+</body>
+</html>
