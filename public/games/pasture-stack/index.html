@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>牧场叠叠消</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700&display=swap">
+<style>
+/* 布局：单列牧场舞台——房间条与回合提示在上，叠牌区居中，盲牌堆、暂存区和共用木质卡槽贴近底部 */
+:root {
+	--meadow: #c4e3a3;
+	--meadow-dot: #b2d78d;
+	--ink: #33402a;
+	--muted: #5e6f4e;
+	--tile-face: #fbfdf3;
+	--tile-edge: #d7e5c2;
+	--tile-side: #5c9a3c;
+	--tile-back: #8fc46c;
+	--shade: rgba(36, 46, 28, 0.52);
+	--tray: #a06c3b;
+	--tray-in: #7c5129;
+	--cell: rgba(255, 244, 222, 0.16);
+	--sky: #2e83c6;
+	--sky-deep: #1f659f;
+	--sun: #f2b84b;
+	--danger: #c8553d;
+	--panel: #fdfef8;
+	--font-display: "ZCOOL KuaiLe", "PingFang SC", "Microsoft YaHei", sans-serif;
+	--font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+	--font-tile: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+	color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+body {
+	margin: 0;
+	background:
+		radial-gradient(circle at 20% 30%, var(--meadow-dot) 0 2px, transparent 3px) 0 0 / 46px 46px,
+		radial-gradient(circle at 70% 75%, var(--meadow-dot) 0 1.5px, transparent 2.5px) 0 0 / 38px 38px,
+		var(--meadow);
+	color: var(--ink);
+	font-family: var(--font-body);
+	font-size: 14px;
+	padding-left: max(16px, env(safe-area-inset-left, 0px));
+	padding-right: max(16px, env(safe-area-inset-right, 0px));
+	padding-block: 12px 24px;
+}
+
+.wrap { max-width: 520px; margin: 0 auto; }
+
+.stage {
+	--t: 48px;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: calc(var(--t) * 0.2);
+	width: calc(var(--t) * 7.66);
+	max-width: 100%;
+	margin: 0 auto;
+}
+
+.bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+}
+
+.bar h1 {
+	margin: 0;
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-size: 1.5rem;
+	line-height: 1.1;
+	letter-spacing: 0.04em;
+}
+
+.bar h1 a { color: inherit; text-decoration: none; }
+
+.meta {
+	display: flex;
+	gap: 10px;
+	color: var(--muted);
+	font-size: 0.8rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.meta b { color: var(--ink); }
+
+.room {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.8rem;
+	color: var(--muted);
+}
+
+.room code {
+	font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+	font-size: 0.95rem;
+	letter-spacing: 0.12em;
+	color: var(--ink);
+}
+
+.players {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.player {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	padding: 6px 10px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.45);
+	border: 2px solid transparent;
+	font-size: 0.85rem;
+}
+
+.player:last-child { justify-content: flex-end; }
+.player .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player.turn { border-color: var(--sun); background: var(--panel); box-shadow: 0 3px 0 rgba(242, 184, 75, 0.55); }
+.player.offline { opacity: 0.55; }
+
+.dot {
+	flex: none;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--tile-side);
+}
+
+.player.offline .dot { background: #9aa58e; }
+
+.turn-banner {
+	font-family: var(--font-display);
+	font-size: 1.05rem;
+	white-space: nowrap;
+}
+
+.turn-banner.mine { color: var(--sky-deep); }
+
+.btn {
+	font-family: var(--font-display);
+	font-size: 1rem;
+	border: 0;
+	border-radius: 999px;
+	padding: 8px 16px;
+	color: #fff;
+	background: var(--sky);
+	box-shadow: 0 4px 0 var(--sky-deep);
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.btn.small { font-size: 0.85rem; padding: 5px 12px; box-shadow: 0 3px 0 var(--sky-deep); }
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--sky-deep); }
+.btn:disabled { background: #9bb38a; box-shadow: 0 4px 0 #7f9870; cursor: not-allowed; }
+.btn.ghost { background: var(--panel); color: var(--ink); box-shadow: 0 4px 0 #b8c9a4; }
+
+.btn:focus-visible, .tile:focus-visible, input:focus-visible {
+	outline: 3px solid var(--sky);
+	outline-offset: 2px;
+}
+
+.board, .piles, .buffer, .slot { position: relative; flex: none; }
+
+.board { width: calc(var(--t) * 7); height: calc(var(--t) * 8); }
+.board.waiting { filter: saturate(0.7); }
+
+.piles { width: calc(var(--t) * 7); height: calc(var(--t) * 1.15); }
+
+.buffer {
+	width: calc(var(--t) * 7);
+	height: calc(var(--t) * 1.12);
+	border-radius: calc(var(--t) * 0.2);
+	background: rgba(255, 255, 255, 0.18);
+	outline: 2px dashed rgba(92, 154, 60, 0.45);
+	outline-offset: -2px;
+}
+
+.buffer-label {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	padding: 0 12px;
+	color: var(--muted);
+	font-size: 0.78rem;
+	text-align: center;
+	pointer-events: none;
+}
+
+.slot {
+	width: calc(var(--t) * 7.66);
+	height: calc(var(--t) * 1.42);
+	border-radius: calc(var(--t) * 0.22);
+	background: var(--tray);
+	box-shadow: inset 0 0 0 4px var(--tray-in), 0 6px 0 var(--tray-in);
+}
+
+.slot.full { box-shadow: inset 0 0 0 4px var(--danger), 0 6px 0 var(--tray-in); }
+
+.cell {
+	position: absolute;
+	top: calc(var(--t) * 0.15);
+	width: var(--t);
+	height: var(--t);
+	border-radius: calc(var(--t) * 0.16);
+	background: var(--cell);
+}
+
+.tile {
+	position: absolute;
+	width: var(--t);
+	height: var(--t);
+	padding: 0;
+	display: grid;
+	place-items: center;
+	border-radius: calc(var(--t) * 0.16);
+	border: 1.5px solid var(--tile-edge);
+	background: var(--tile-face);
+	box-shadow:
+		0 calc(var(--t) * 0.09) 0 var(--tile-side),
+		0 calc(var(--t) * 0.13) calc(var(--t) * 0.12) rgba(40, 60, 20, 0.28);
+	font-family: var(--font-tile);
+	font-size: calc(var(--t) * 0.6);
+	line-height: 1;
+	color: var(--ink);
+	cursor: pointer;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.tile:not(:disabled):hover { filter: brightness(1.06); }
+.tile:disabled { cursor: default; }
+
+.tile.covered::after {
+	content: "";
+	position: absolute;
+	inset: -1.5px;
+	border-radius: inherit;
+	background: var(--shade);
+}
+
+.tile.back {
+	font-size: 0;
+	background:
+		repeating-linear-gradient(45deg, transparent 0 6px, rgba(255, 255, 255, 0.18) 6px 9px),
+		var(--tile-back);
+	border-color: var(--tile-side);
+}
+
+.tile.back.covered::after { background: rgba(36, 46, 28, 0.28); }
+.tile.clearing { animation: pop 0.2s ease-in 0.2s forwards; }
+
+@keyframes pop {
+	to { transform: scale(0.15); opacity: 0; }
+}
+
+.props {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 10px;
+	width: 100%;
+	margin-top: 4px;
+}
+
+.props .btn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	padding: 8px 6px 7px;
+	border-radius: 14px;
+}
+
+.props .btn small { font-family: var(--font-body); font-size: 0.7rem; opacity: 0.9; }
+
+.note {
+	margin: 2px 0 0;
+	max-width: 36em;
+	color: var(--muted);
+	font-size: 0.78rem;
+	line-height: 1.6;
+	text-align: center;
+	text-wrap: balance;
+}
+
+.toast {
+	position: fixed;
+	left: 50%;
+	bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+	transform: translateX(-50%);
+	z-index: 2000;
+	padding: 10px 16px;
+	border-radius: 12px;
+	background: var(--ink);
+	color: #fff;
+	font-size: 0.85rem;
+	box-shadow: 0 6px 20px rgba(30, 40, 20, 0.3);
+}
+
+.overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 1000;
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	background: rgba(51, 64, 42, 0.42);
+	border-radius: 18px;
+}
+
+.panel {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	width: min(320px, 100%);
+	padding: 22px 20px 20px;
+	border-radius: 18px;
+	background: var(--panel);
+	box-shadow: 0 8px 0 #b8c9a4, 0 18px 40px rgba(30, 40, 20, 0.3);
+	text-align: center;
+}
+
+.panel h2 {
+	margin: 0;
+	font-family: var(--font-display);
+	font-weight: 400;
+	font-size: 1.6rem;
+	text-wrap: balance;
+}
+
+.panel p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+
+.panel .actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 10px;
+	margin-top: 4px;
+}
+
+.panel input {
+	width: 100%;
+	padding: 10px 12px;
+	border-radius: 10px;
+	border: 2px solid var(--tile-edge);
+	background: #fff;
+	color: var(--ink);
+	font: inherit;
+	font-size: 1rem;
+	text-align: center;
+}
+
+.invite-link {
+	width: 100%;
+	padding: 8px 10px;
+	border-radius: 10px;
+	background: rgba(196, 227, 163, 0.35);
+	font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+	font-size: 0.78rem;
+	word-break: break-all;
+	user-select: all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tile.clearing { animation: none; opacity: 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<header class="bar">
+			<div>
+				<h1><a href="/">牧场叠叠消</a></h1>
+				<div class="meta">
+					<span id="level-label">第 1 关</span>
+					<span>剩余 <b id="remain">0</b> 张</span>
+				</div>
+			</div>
+			<div class="room">
+				<span>房间 <code id="room-code">------</code></span>
+				<button class="btn small" id="btn-invite" type="button">邀请</button>
+			</div>
+		</header>
+
+		<div class="players" id="players" aria-live="polite">
+			<div class="player" id="player-0"><span class="dot"></span><span class="name">等待加入</span></div>
+			<div class="turn-banner" id="turn-banner">连接中…</div>
+			<div class="player" id="player-1"><span class="name">等待加入</span><span class="dot"></span></div>
+		</div>
+
+		<div class="board" id="board" aria-label="叠牌区"></div>
+		<div class="piles" id="piles" aria-label="盲牌堆"></div>
+		<div class="buffer" id="buffer" aria-label="暂存区"></div>
+		<div class="slot" id="slot" aria-label="共用卡槽，共 7 格"></div>
+
+		<div class="props">
+			<button class="btn" id="btn-out" type="button" title="把卡槽最左边的 3 张牌移到暂存区">移出<small id="out-count">剩 1 次</small></button>
+			<button class="btn" id="btn-undo" type="button" title="把上一张放进卡槽的牌退回原位，由拿它的人重新走">撤回<small id="undo-count">剩 1 次</small></button>
+			<button class="btn" id="btn-shuffle" type="button" title="把场上剩余的牌重新随机分配图案">洗牌<small id="shuffle-count">剩 1 次</small></button>
+		</div>
+
+		<p class="note">两人共用一个卡槽，轮流各拿一张：点亮的牌才能拿，凑齐 3 张相同的自动消除，卡槽满了一起输。牌局随机生成，不保证有解。移出、撤回、洗牌、复活两人共享，每局各 1 次，只有轮到的人能用移出、撤回、洗牌。</p>
+
+		<div class="overlay" id="overlay" hidden>
+			<div class="panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+				<h2 id="dialog-title"></h2>
+				<p id="dialog-text"></p>
+				<div class="invite-link" id="dialog-link" hidden></div>
+				<form id="name-form" hidden>
+					<input id="name-input" name="name" maxlength="16" autocomplete="nickname" placeholder="你的昵称，比如 小王" required>
+				</form>
+				<div class="actions" id="dialog-actions"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="module">
+import { meta, isFree, remaining, SLOT_SIZE, BUFFER_MAX } from "./logic.js";
+import { connectRoom, createRoom, getName, setName, inviteUrl, copyText, normalizeCode } from "/shared/room-client.js";
+
+const PILE_STEP = 0.13;
+const $ = (selector) => document.querySelector(selector);
+const stage = $("#stage");
+const boardEl = $("#board");
+const pilesEl = $("#piles");
+const bufferEl = $("#buffer");
+const slotEl = $("#slot");
+const overlay = $("#overlay");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let T = 48;
+let roomCode = "";
+let conn = null;
+let connection = "connecting";
+let view = null;         // 服务端广播的最新 { room, you, state }
+let shown = null;        // 当前画面上的状态（消除动画期间是中间态）
+let clearingIds = new Set();
+let clearTimer = 0;
+let toastTimer = 0;
+let fatalMessage = "";
+
+function toast(message) {
+	const el = $("#toast");
+	el.textContent = message;
+	el.hidden = false;
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => { el.hidden = true; }, 2200);
+}
+
+function send(action) {
+	if (!conn || !conn.send(action)) toast("正在重新连接，请稍等");
+}
+
+function playerCount() {
+	return view?.room.players.length || 0;
+}
+
+function myTurn() {
+	return !!view && view.you !== null && shown.status === "play" &&
+		playerCount() >= meta.minPlayers && shown.turn === view.you && !clearingIds.size;
+}
+
+function tileButton(tile, x, y, z, { covered = false, back = false } = {}) {
+	const button = document.createElement("button");
+	button.type = "button";
+	button.className = "tile" + (covered ? " covered" : "") + (back ? " back" : "") +
+		(clearingIds.has(tile.id) ? " clearing" : "");
+	button.dataset.id = String(tile.id);
+	button.style.left = `${x}px`;
+	button.style.top = `${y}px`;
+	button.style.zIndex = String(z);
+	button.textContent = back ? "" : tile.type;
+	button.disabled = covered || tile.where === "slot" || !myTurn();
+	if (back) button.setAttribute("aria-label", "背面朝上的牌");
+	return button;
+}
+
+function slotPad() { return T * 0.15; }
+function slotX(index) { return slotPad() + index * T * 1.06; }
+
+function render() {
+	if (!shown) return;
+	const S = shown;
+	const previous = new Map();
+	if (!reduceMotion) {
+		document.querySelectorAll(".tile[data-id]").forEach((el) => previous.set(el.dataset.id, el.getBoundingClientRect()));
+	}
+	stage.style.setProperty("--t", `${T}px`);
+
+	const boardTiles = S.tiles.filter((tile) => tile.where === "board").sort((a, b) => a.layer - b.layer);
+	boardEl.replaceChildren(...boardTiles.map((tile) => (
+		tileButton(tile, tile.x * T, tile.y * T, tile.layer + 1, { covered: !isFree(S, tile) })
+	)));
+	boardEl.classList.toggle("waiting", playerCount() < meta.minPlayers);
+
+	const pileNodes = [];
+	["L", "R"].forEach((side) => {
+		const pile = S.piles[side];
+		pile.forEach((id, index) => {
+			const isTop = index === pile.length - 1;
+			const x = side === "L" ? index * PILE_STEP * T : 6 * T - index * PILE_STEP * T;
+			pileNodes.push(tileButton(S.tiles[id], x, 0, index + 1, { covered: !isTop, back: !isTop }));
+		});
+	});
+	pilesEl.replaceChildren(...pileNodes);
+	pilesEl.hidden = S.level === 1;
+
+	const bufferWidth = S.buffer.length * T * 1.05 - T * 0.05;
+	const bufferNodes = S.buffer.map((id, index) => (
+		tileButton(S.tiles[id], (7 * T - bufferWidth) / 2 + index * T * 1.05, T * 0.04, 1)
+	));
+	if (!S.buffer.length) {
+		const label = document.createElement("div");
+		label.className = "buffer-label";
+		label.textContent = "暂存区：移出或复活的牌放在这里，轮到谁谁可以点回卡槽";
+		bufferNodes.push(label);
+	}
+	bufferEl.replaceChildren(...bufferNodes);
+
+	const cells = Array.from({ length: SLOT_SIZE }, (_, index) => {
+		const cell = document.createElement("div");
+		cell.className = "cell";
+		cell.style.left = `${slotX(index)}px`;
+		return cell;
+	});
+	slotEl.replaceChildren(...cells, ...S.slot.map((id, index) => tileButton(S.tiles[id], slotX(index), slotPad(), 2)));
+	slotEl.classList.toggle("full", S.slot.length >= SLOT_SIZE - 1);
+
+	$("#level-label").textContent = `第 ${S.level} 关`;
+	$("#remain").textContent = String(remaining(S));
+	renderPlayers();
+	renderProps();
+	renderOverlay();
+
+	if (previous.size) {
+		document.querySelectorAll(".tile[data-id]").forEach((el) => {
+			const before = previous.get(el.dataset.id);
+			if (!before) return;
+			const after = el.getBoundingClientRect();
+			const dx = before.left - after.left;
+			const dy = before.top - after.top;
+			if (Math.abs(dx) + Math.abs(dy) < 1) return;
+			el.animate(
+				[{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }],
+				{ duration: 220, easing: "cubic-bezier(.2,.7,.3,1)" },
+			);
+		});
+	}
+}
+
+function playerLabel(seat) {
+	const player = view?.room.players.find((item) => item.seat === seat);
+	if (!player) return "";
+	return player.name + (seat === view.you ? "（你）" : "");
+}
+
+function renderPlayers() {
+	[0, 1].forEach((seat) => {
+		const el = $(`#player-${seat}`);
+		const player = view?.room.players.find((item) => item.seat === seat);
+		el.querySelector(".name").textContent = player ? playerLabel(seat) + (player.online ? "" : " · 离线") : "等待加入";
+		el.classList.toggle("offline", !!player && !player.online);
+		el.classList.toggle("turn", !!player && shown.status === "play" && shown.turn === seat && playerCount() >= meta.minPlayers);
+	});
+	const banner = $("#turn-banner");
+	let text = "";
+	if (connection !== "online") text = "重新连接中…";
+	else if (playerCount() < meta.minPlayers) text = "等对方加入";
+	else if (shown.status === "win") text = "一起过关了";
+	else if (shown.status === "fail") text = "卡槽满了";
+	else if (shown.turn === view.you) text = "轮到你拿牌";
+	else text = `等 ${view.room.players.find((item) => item.seat === shown.turn)?.name || "对方"} 拿牌`;
+	banner.textContent = text;
+	banner.classList.toggle("mine", text === "轮到你拿牌");
+}
+
+function renderProps() {
+	const S = shown;
+	const canAct = myTurn();
+	const setProp = (buttonId, countId, left, usable) => {
+		$(buttonId).disabled = !canAct || left < 1 || !usable;
+		$(countId).textContent = left > 0 ? `剩 ${left} 次` : "已用完";
+	};
+	setProp("#btn-out", "#out-count", S.props.moveOut, S.slot.length > 0 && S.buffer.length < BUFFER_MAX);
+	setProp("#btn-undo", "#undo-count", S.props.undo, !!S.last && S.tiles[S.last.id]?.where === "slot");
+	setProp("#btn-shuffle", "#shuffle-count", S.props.shuffle, S.tiles.some((tile) => tile.where === "board" || tile.where === "pile"));
+}
+
+function showDialog({ title, text, link = "", actions = [], nameForm = false }) {
+	overlay.hidden = false;
+	$("#dialog-title").textContent = title;
+	$("#dialog-text").textContent = text;
+	$("#dialog-link").hidden = !link;
+	$("#dialog-link").textContent = link;
+	$("#name-form").hidden = !nameForm;
+	$("#dialog-actions").replaceChildren(...actions.map(([label, handler, ghost]) => {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.className = ghost ? "btn ghost" : "btn";
+		button.textContent = label;
+		button.addEventListener("click", handler);
+		return button;
+	}));
+}
+
+function renderOverlay() {
+	if (fatalMessage) {
+		showDialog({ title: "进不了这个房间", text: fatalMessage, actions: [["回首页", () => { location.href = "/"; }, false]] });
+		return;
+	}
+	if (!view) return;
+	const S = shown;
+	const link = inviteUrl(meta.id, roomCode);
+	if (playerCount() < meta.minPlayers) {
+		showDialog({
+			title: "等另一位玩家",
+			text: `把下面的链接发给对方，对方打开后就能开始。房间码 ${roomCode}`,
+			link,
+			actions: [["复制邀请链接", () => copyInvite(), false]],
+		});
+		return;
+	}
+	if (S.status === "fail") {
+		showDialog({
+			title: "卡槽满了",
+			text: S.props.revive
+				? `还剩 ${remaining(S)} 张牌。复活会把卡槽最左边的 3 张移到暂存区，两人谁点都行。`
+				: `还剩 ${remaining(S)} 张牌，复活机会已经用掉了。`,
+			actions: [
+				...(S.props.revive ? [["复活（剩 1 次）", () => send({ type: "revive" }), false]] : []),
+				["重开本关", () => send({ type: "restart" }), !!S.props.revive],
+			],
+		});
+		return;
+	}
+	if (S.status === "win" && S.level === 1) {
+		showDialog({
+			title: "第 1 关完成",
+			text: "第 2 关有 14 种图案、8 层牌，还有两堆只能看到顶牌的盲牌。道具次数会重置。",
+			actions: [["进入第 2 关", () => send({ type: "nextLevel" }), false]],
+		});
+		return;
+	}
+	if (S.status === "win") {
+		showDialog({
+			title: "一起通关了",
+			text: "随机牌局不保证有解，两个人能清空整个牧场并不常见。",
+			actions: [
+				["再来一局", () => send({ type: "playAgain", level: 2 }), false],
+				["回到第 1 关", () => send({ type: "playAgain", level: 1 }), true],
+			],
+		});
+		return;
+	}
+	overlay.hidden = true;
+}
+
+async function copyInvite() {
+	const copied = await copyText(inviteUrl(meta.id, roomCode));
+	toast(copied ? "邀请链接已复制，发给对方吧" : "复制失败，请手动选中链接复制");
+}
+
+// 拿牌凑成 3 张时，先展示含这 3 张的卡槽再播放消除，然后切到服务端的最终状态。
+function applyServerMessage(message) {
+	view = message;
+	clearTimeout(clearTimer);
+	const event = message.event;
+	if (event?.type === "pick" && event.cleared?.length && !reduceMotion) {
+		const middle = structuredClone(message.state);
+		middle.slot = event.slotBefore;
+		event.cleared.forEach((id) => { middle.tiles[id].where = "slot"; });
+		shown = middle;
+		clearingIds = new Set(event.cleared);
+		render();
+		clearTimer = setTimeout(() => {
+			clearingIds = new Set();
+			shown = view.state;
+			render();
+		}, 420);
+		return;
+	}
+	clearingIds = new Set();
+	shown = message.state;
+	render();
+	if (event?.type === "shuffle" && !reduceMotion) {
+		[boardEl, pilesEl].forEach((el) => el.animate(
+			[{ filter: "brightness(1.35)" }, { filter: "none" }],
+			{ duration: 320, easing: "ease-out" },
+		));
+	}
+}
+
+function fit() {
+	const width = document.querySelector(".wrap").clientWidth;
+	const byWidth = Math.floor(width / 7.8);
+	const byHeight = Math.floor((window.innerHeight - 270) / 11.6);
+	T = Math.max(30, Math.min(58, byWidth, byHeight));
+}
+
+function connect(name) {
+	conn = connectRoom(roomCode, {
+		name,
+		onState: applyServerMessage,
+		onError: toast,
+		onFatal: (message) => {
+			fatalMessage = message;
+			renderOverlay();
+		},
+		onStatus: (status) => {
+			connection = status;
+			if (shown) renderPlayers();
+			else $("#turn-banner").textContent = status === "online" ? "加载中…" : "连接中…";
+		},
+	});
+}
+
+function askName() {
+	showDialog({
+		title: "先起个昵称",
+		text: "对方会在牌桌上看到这个名字。",
+		nameForm: true,
+		actions: [["进入房间", () => $("#name-form").requestSubmit(), false]],
+	});
+	const input = $("#name-input");
+	input.value = "";
+	input.focus();
+}
+
+$("#name-form").addEventListener("submit", (event) => {
+	event.preventDefault();
+	const name = $("#name-input").value.trim().slice(0, 16);
+	if (!name) return;
+	setName(name);
+	overlay.hidden = true;
+	connect(name);
+});
+
+stage.addEventListener("click", (event) => {
+	const tile = event.target.closest(".tile");
+	if (tile && !tile.disabled) send({ type: "pick", id: Number(tile.dataset.id) });
+});
+$("#btn-out").addEventListener("click", () => send({ type: "moveOut" }));
+$("#btn-undo").addEventListener("click", () => send({ type: "undo" }));
+$("#btn-shuffle").addEventListener("click", () => send({ type: "shuffle" }));
+$("#btn-invite").addEventListener("click", copyInvite);
+window.addEventListener("resize", () => {
+	fit();
+	render();
+});
+
+async function start() {
+	fit();
+	roomCode = normalizeCode(new URLSearchParams(location.search).get("room"));
+	if (!roomCode) {
+		try {
+			roomCode = await createRoom(meta.id);
+			history.replaceState(null, "", `?room=${roomCode}`);
+		} catch (error) {
+			fatalMessage = error.message;
+			renderOverlay();
+			return;
+		}
+	}
+	$("#room-code").textContent = roomCode;
+	const name = getName();
+	if (name) connect(name);
+	else askName();
+}
+
+start();
+</script>
+</body>
+</html>
