@@ -3,6 +3,7 @@
 	"name": "couple-game",
 	"main": "src/worker.js",
 	"compatibility_date": "2026-10-01",
+	"routes": [{ "pattern": "couple.887756.xyz", "custom_domain": true }],
 	"assets": {
 		"directory": "./public/",
 		"binding": "ASSETS",

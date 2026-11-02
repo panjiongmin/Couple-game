@@ -2,6 +2,8 @@
 
 两个人在各自的手机或电脑上一起玩的小游戏合集。建一个房间，把邀请链接发给对方，对方打开就能加入。
 
+线上地址：https://couple.887756.xyz
+
 运行在 Cloudflare 上：一个 Worker 同时提供页面和房间接口，每个房间是一个 Durable Object，负责座位、在线状态、回合顺序和规则校验。
 
 ## 已有游戏
@@ -34,7 +36,7 @@ npx wrangler login
 npm run deploy
 ```
 
-部署完成后会得到 `https://couple-game.<你的子域>.workers.dev` 这样的地址。Durable Objects 使用 SQLite 存储，Workers 免费套餐即可运行。
+`wrangler.jsonc` 里把 Worker 绑定到自定义域名 `couple.887756.xyz`（`routes` 中的 `custom_domain`），部署时 Cloudflare 会自动创建 DNS 记录和证书。换域名只需改这一行，域名必须托管在同一个 Cloudflare 账号下。Durable Objects 使用 SQLite 存储，Workers 免费套餐即可运行。
 
 ## 目录结构
 
