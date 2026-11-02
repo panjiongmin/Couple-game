@@ -187,6 +187,20 @@ test("花露水让淋到的小偷持续犯困，香味飘远连小猴子也能�
 	]), true);
 });
 
+test("中途重开要两人都同意，一方拒绝就取消", () => {
+	let state = act(createState(), 0, { type: "build", kind: "sunflower", x: 4, y: 3 });
+	state = act(state, 0, { type: "restartVote" });
+	assert.deepEqual(state.restartVote, [true, false]);
+	state = act(state, 1, { type: "restartVote", agree: false });
+	assert.deepEqual(state.restartVote, [false, false]);
+	assert.equal(state.towers.length, 1);
+	state = act(state, 1, { type: "restartVote" });
+	state = act(state, 0, { type: "restartVote" });
+	assert.equal(state.towers.length, 0);
+	assert.equal(state.night, 1);
+	assert.deepEqual(state.stars, [START_STARS, START_STARS]);
+});
+
 test("对方没来时不能操作，但可以发表情", () => {
 	const state = createState();
 	const result = applyAction(state, { type: "build", kind: "sunflower", x: 4, y: 3 }, ctx(0, { playerCount: 1 }));

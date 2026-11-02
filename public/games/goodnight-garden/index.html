@@ -270,7 +270,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 	font-size: 0.78rem;
 }
 
-.forecast .foe { display: flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; }
+.forecast .foe {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding: 1px 6px 1px 2px;
+	border: 0;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.6);
+	color: inherit;
+	font: inherit;
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	touch-action: manipulation;
+}
+.forecast .foe.selected { background: var(--lav-soft); color: var(--lav-deep); box-shadow: inset 0 0 0 2px var(--lav); }
 .forecast .foe .ico { width: 22px; height: 22px; }
 
 .map {
@@ -629,6 +643,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .kind b { font-family: var(--font-display); font-weight: 400; font-size: 0.95rem; }
 .kind small { display: flex; align-items: center; gap: 2px; color: var(--muted); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
 .kind small .ico { grid-row: auto; width: 12px; height: 12px; }
+.kind.poor small { color: var(--pink-deep); }
 .kind.selected { box-shadow: inset 0 0 0 2px var(--lav-deep), 0 4px 0 #d9cff9; background: var(--lav-soft); }
 .kind:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -649,11 +664,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .sheet .combo { color: var(--pink-deep); }
 .sheet .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .sheet .acts .btn { font-size: 0.85rem; padding: 5px 14px; }
+.sheet .stats { color: var(--ink); font-size: 0.75rem; }
+.sheet .stats.next { color: var(--lav-deep); }
+
+.spot.picked::before { border-style: solid; border-color: var(--lav-deep); background: rgba(232, 225, 255, 0.85); }
+.ghost-tower { position: absolute; padding: 3px; opacity: 0.75; pointer-events: none; z-index: 3; animation: ghost 1s ease-in-out infinite; }
+@keyframes ghost { 50% { opacity: 0.45; } }
 
 .ready-btn { width: 100%; font-size: 1.1rem; padding: 10px 18px; }
 
 .dock-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
 .toggle { background: var(--mint-soft); color: var(--mint-deep); }
+.chip.restart-btn { background: #efe9e4; color: var(--muted); }
+.chip.restart-btn.asking { background: var(--butter-soft); color: #9a641a; }
 .toggle.off { background: #efe9e4; color: #a8978b; text-decoration: line-through; }
 .chip.codex-btn { background: var(--pink-soft); color: var(--pink-deep); }
 
@@ -866,6 +889,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 					<button class="chip" id="btn-gift" type="button">送对方 5 颗星星</button>
 				</div>
 				<div class="palette" id="palette"></div>
+				<div class="sheet" id="info" hidden></div>
 				<div class="sheet" id="sheet" hidden></div>
 				<button class="btn ready-btn" id="btn-ready" type="button">准备好了，天黑吧</button>
 				<p class="hint" id="hint"></p>
@@ -878,6 +902,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 				<button class="chip codex-btn" id="btn-codex" type="button">✦ 组合图鉴</button>
 				<button class="chip toggle" id="btn-music" type="button">音乐</button>
 				<button class="chip toggle" id="btn-sfx" type="button">音效</button>
+				<button class="chip restart-btn" id="btn-restart" type="button">重开</button>
 			</div>
 		</section>
 
@@ -909,7 +934,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 <script type="module">
 import {
 	meta, COLS, ROWS, CELL, TICK_MS, NIGHTS, ROLES, TOWERS, COMBOS, CRITTERS, CARDS, EMOTES, WAVES, MAX_LEVEL,
-	PATHS, CRATE, PATH_CELLS, NIGHT_BONUS, REVIVE_BASKET, WAVE_SPEED, FLAG_EATING, FLAG_DAZED, FLAG_SLOW, FLAG_DROWSY,
+	PATHS, CRATE, PATH_CELLS, NIGHT_BONUS, REVIVE_BASKET, WAVE_SPEED, HP_GROWTH, FLAG_EATING, FLAG_DAZED, FLAG_SLOW, FLAG_DROWSY,
 	canBuildAt, comboMap, towerRange, upgradeCost, simulateNight, settle,
 } from "./logic.js";
 import { connectRoom, createRoom, getName, setName, inviteUrl, copyText, normalizeCode } from "/shared/room-client.js";
@@ -938,6 +963,9 @@ let clockOffset = 0;      // 服务端时间 - 本机时间
 let fatalMessage = "";
 let selectedKind = null;
 let selectedTower = null;
+let selectedCritter = null;
+let pendingSpot = null;   // 手机上没有悬停：先点格子预览，再点一次（或按"放在这里"）才建造
+let restartArmed = 0;     // 点了一下"重开"的时间，3 秒内再点才发起
 let freshTower = null;
 let replay = null;
 let settleTimer = 0;
@@ -1061,13 +1089,29 @@ function drawTowers(S) {
 				if (!canBuildAt(S, x, y)) continue;
 				const spot = document.createElement("div");
 				const names = combosAt(S, selectedKind, x, y);
-				spot.className = "spot" + (names.length ? " combo" : "");
+				const picked = pendingSpot && pendingSpot.x === x && pendingSpot.y === y;
+				spot.className = "spot" + (names.length ? " combo" : "") + (picked ? " picked" : "");
 				if (names.length) spot.title = names.join("、");
 				spot.dataset.x = String(x);
 				spot.dataset.y = String(y);
 				nodes.push(place(spot, x * C, y * C));
 			}
 		}
+		if (pendingSpot && canBuildAt(S, pendingSpot.x, pendingSpot.y)) {
+			const ghost = { id: -1, kind: selectedKind, x: pendingSpot.x, y: pendingSpot.y, level: 1 };
+			const range = towerRange(ghost, comboMap([...S.towers, ghost])) / CELL * C;
+			const ring = document.createElement("div");
+			ring.className = "range";
+			nodes.push(place(ring, (ghost.x + 0.5) * C - range, (ghost.y + 0.5) * C - range, range * 2));
+			const shadow = document.createElement("div");
+			shadow.className = "ghost-tower";
+			shadow.append(iconEl(TOWERS[selectedKind].icon));
+			nodes.push(place(shadow, ghost.x * C, ghost.y * C));
+		} else {
+			pendingSpot = null;
+		}
+	} else {
+		pendingSpot = null;
 	}
 	towersEl.replaceChildren(...nodes);
 }
@@ -1503,13 +1547,31 @@ function renderForecast(S) {
 	(WAVES[night] || []).forEach(([kind, , count]) => { counts[kind] = (counts[kind] || 0) + count; });
 	const nodes = [document.createTextNode(`第 ${night} 夜会来：`)];
 	Object.entries(counts).forEach(([kind, count]) => {
-		const foe = document.createElement("span");
-		foe.className = "foe";
-		foe.title = `${CRITTERS[kind].name}：${CRITTERS[kind].desc}`;
+		const foe = document.createElement("button");
+		foe.type = "button";
+		foe.className = "foe" + (selectedCritter === kind ? " selected" : "");
+		foe.dataset.critter = kind;
+		foe.setAttribute("aria-label", `${CRITTERS[kind].name} ${count} 只，点一下看介绍`);
 		foe.append(iconEl(CRITTERS[kind].icon), document.createTextNode(`×${count}`));
 		nodes.push(foe);
 	});
 	el.replaceChildren(...nodes);
+}
+
+const cells = (value) => String(Math.round(value / CELL * 10) / 10);
+
+// 塔在某一级的具体数值，手机上看不到悬停提示，直接写出来
+function towerStats(kind, level = 1) {
+	const def = TOWERS[kind];
+	const L = level - 1;
+	const parts = [`范围 ${cells(def.range[L])} 格`];
+	if (def.slow) parts.push(`减速 ${def.slow[L]}%`);
+	if (def.drip) parts.push(`每秒困 ${def.drip[L] * 10}`);
+	if (def.hold) parts.push(`啃 ${def.hold[L] / 10} 秒`);
+	if (def.push) parts.push(`吓退 ${cells(def.push[L])} 格`);
+	if (def.damage) parts.push(`每下困 ${def.damage[L]}`);
+	if (def.cooldown) parts.push(`${def.cooldown[L] / 10} 秒一次`);
+	return parts.join(" · ");
 }
 
 function kindButton(S, kind, seat) {
@@ -1517,10 +1579,10 @@ function kindButton(S, kind, seat) {
 	const cost = S.perks[seat].sale ? Math.ceil(def.cost / 2) : def.cost;
 	const button = document.createElement("button");
 	button.type = "button";
-	button.className = "kind" + (selectedKind === kind ? " selected" : "");
+	button.className = "kind" + (selectedKind === kind ? " selected" : "") + (S.stars[seat] < cost ? " poor" : "");
 	button.dataset.kind = kind;
-	button.title = def.desc;
-	button.disabled = S.status !== "day" || S.stars[seat] < cost || playerCount() < meta.minPlayers;
+	// 星星不够也能点开看介绍，只是不能放
+	button.disabled = S.status !== "day" || playerCount() < meta.minPlayers;
 	const name = document.createElement("b");
 	name.textContent = def.name;
 	const price = document.createElement("small");
@@ -1549,7 +1611,16 @@ function renderSheet(S, seat) {
 	title.append(level);
 	const desc = document.createElement("p");
 	desc.textContent = def.desc;
-	sheet.append(title, desc);
+	const stats = document.createElement("p");
+	stats.className = "stats";
+	stats.textContent = towerStats(tower.kind, tower.level);
+	sheet.append(title, desc, stats);
+	if (tower.level < MAX_LEVEL) {
+		const next = document.createElement("p");
+		next.className = "stats next";
+		next.textContent = `升到 ${tower.level + 1} 级：${towerStats(tower.kind, tower.level + 1)}`;
+		sheet.append(next);
+	}
 	if (combos.length) {
 		const combo = document.createElement("p");
 		combo.className = "combo";
@@ -1583,6 +1654,71 @@ function renderSheet(S, seat) {
 	sheet.append(acts);
 }
 
+// 点了塔种类、预览格子或者小偷时，在操作区显示说明
+function renderInfo(S, seat) {
+	const info = $("#info");
+	info.replaceChildren();
+	if (selectedKind) {
+		const def = TOWERS[selectedKind];
+		const cost = S.perks[seat].sale ? Math.ceil(def.cost / 2) : def.cost;
+		const title = document.createElement("h3");
+		title.textContent = def.name;
+		const price = document.createElement("small");
+		price.textContent = `${cost} 颗星星` + (S.stars[seat] < cost ? `，还差 ${cost - S.stars[seat]} 颗` : "");
+		title.append(price);
+		const desc = document.createElement("p");
+		desc.textContent = def.desc;
+		const stats = document.createElement("p");
+		stats.className = "stats";
+		stats.textContent = towerStats(selectedKind);
+		info.append(iconEl(def.icon), title, desc, stats);
+		const combo = document.createElement("p");
+		combo.className = "combo";
+		if (pendingSpot) {
+			const names = combosAt(S, selectedKind, pendingSpot.x, pendingSpot.y);
+			combo.textContent = names.length ? `✦ 放在这里会触发：${names.join("、")}` : "这里旁边没有能组合的塔";
+			const acts = document.createElement("div");
+			acts.className = "acts";
+			const ok = document.createElement("button");
+			ok.type = "button";
+			ok.className = "btn";
+			ok.textContent = S.stars[seat] < cost ? "星星不够" : `放在这里（${cost} 星星）`;
+			ok.disabled = S.stars[seat] < cost;
+			ok.addEventListener("click", () => send({ type: "build", kind: selectedKind, x: pendingSpot.x, y: pendingSpot.y }));
+			const cancel = document.createElement("button");
+			cancel.type = "button";
+			cancel.className = "btn ghost";
+			cancel.textContent = "换个地方";
+			cancel.addEventListener("click", () => { pendingSpot = null; render(); });
+			acts.append(ok, cancel);
+			info.append(combo, acts);
+		} else {
+			const partners = COMBOS.filter((item) => item.pair.includes(selectedKind))
+				.map((item) => `${TOWERS[item.pair.find((kind) => kind !== selectedKind)].name}→${item.name}`);
+			combo.textContent = `挨着${ROLES[1 - TOWERS[selectedKind].seat].name}的 ${partners.join("、")}`;
+			info.append(combo);
+		}
+		info.hidden = false;
+		return;
+	}
+	if (selectedCritter) {
+		const def = CRITTERS[selectedCritter];
+		const night = Math.min(S.night, NIGHTS);
+		const title = document.createElement("h3");
+		title.textContent = def.name;
+		const desc = document.createElement("p");
+		desc.textContent = def.desc;
+		const stats = document.createElement("p");
+		stats.className = "stats";
+		const hp = Math.floor(def.hp * (100 + (night - 1) * HP_GROWTH) / 100);
+		stats.textContent = `清醒值 ${hp} · 每秒走 ${cells(def.speed * 10)} 格 · 一次叼走 ${def.steal} 颗 · 哄睡得 ${def.reward} 星星`;
+		info.append(iconEl(def.icon), title, desc, stats);
+		info.hidden = false;
+		return;
+	}
+	info.hidden = true;
+}
+
 function renderDock(S) {
 	const seat = mySeat();
 	const day = S.status !== "night";
@@ -1593,14 +1729,21 @@ function renderDock(S) {
 	$("#btn-gift").disabled = S.stars[seat] < 1 || playerCount() < meta.minPlayers;
 	$("#btn-gift").textContent = `送${nameOf(1 - seat)} ${Math.min(5, Math.max(1, S.stars[seat]))} 颗星星`;
 	$("#palette").replaceChildren(...ROLES[seat].towers.map((kind) => kindButton(S, kind, seat)));
+	renderInfo(S, seat);
 	renderSheet(S, seat);
+	const votes = S.restartVote || [false, false];
+	const restart = $("#btn-restart");
+	const armed = Date.now() - restartArmed < 3000;
+	restart.classList.toggle("asking", votes[seat] || votes[1 - seat] || armed);
+	restart.textContent = votes[seat] ? "取消重开" : votes[1 - seat] ? "同意重开" : armed ? "再点一下确认重开" : "重开";
+	restart.disabled = playerCount() < meta.minPlayers;
 	const ready = $("#btn-ready");
 	ready.disabled = S.status !== "day" || playerCount() < meta.minPlayers;
 	ready.className = "btn ready-btn" + (S.ready[seat] ? " ghost" : " night-btn");
 	ready.textContent = S.ready[seat] ? "取消准备" : "准备好了，天黑吧";
 	const partner = ROLES[1 - seat];
 	$("#hint").textContent = selectedKind
-		? `点虚线格子放下${TOWERS[selectedKind].name}，粉色 ✦ 格子能和对方的塔组合；再点一次卡片取消`
+		? `点虚线格子先预览范围，再点一次或按"放在这里"才建造；粉色 ✦ 格子能和对方的塔组合`
 		: `你是${ROLES[seat].name}，负责${ROLES[seat].towers.map((kind) => TOWERS[kind].name).join("、")}；${partner.name}负责${partner.towers.map((kind) => TOWERS[kind].name).join("、")}。两人的塔挨着会有组合效果 ✦`;
 }
 
@@ -1649,6 +1792,19 @@ function renderOverlay(S) {
 			iconName: "invite",
 			link: inviteUrl(meta.id, roomCode),
 			actions: [["复制邀请链接", copyInvite, false]],
+		});
+		return;
+	}
+	const votes = S.restartVote || [false, false];
+	if (seat !== null && votes[1 - seat] && !votes[seat]) {
+		showDialog({
+			title: `${nameOf(1 - seat)}想重新开始`,
+			text: "同意的话会回到第 1 夜，菜园里的塔、星星和进度都会清空。",
+			iconName: "sprout",
+			actions: [
+				["同意重开", () => send({ type: "restartVote" }), false],
+				["再想想", () => send({ type: "restartVote", agree: false }), true],
+			],
 		});
 		return;
 	}
@@ -1764,7 +1920,20 @@ function onServerMessage(message) {
 	if (event?.type === "build") freshTower = event.tower;
 	if (event?.type === "gift" && event.seat !== mySeat()) toast(`${nameOf(event.seat)}送了你 ${event.amount} 颗星星`);
 	if (event?.type === "revive") toast(`复活啦，菜筐补到 ${REVIVE_BASKET} 颗，重新布置一下吧`);
-	if (event?.type === "build" && event.seat === mySeat()) selectedKind = null;
+	if (event?.type === "build" && event.seat === mySeat()) {
+		selectedKind = null;
+		pendingSpot = null;
+	}
+	if (event?.type === "restartVote") {
+		if (event.seat === mySeat() && event.agree) toast(`已经问过${nameOf(1 - event.seat)}了，等 TA 同意`);
+		if (event.seat !== mySeat() && !event.agree) toast(`${nameOf(event.seat)}想再玩一会儿，没有重开`);
+	}
+	if (event?.type === "restart") {
+		selectedKind = null;
+		selectedTower = null;
+		pendingSpot = null;
+		toast("重新开始啦，第 1 夜");
+	}
 	render();
 }
 
@@ -1775,6 +1944,18 @@ $("#palette").addEventListener("click", (event) => {
 	if (!button || button.disabled) return;
 	selectedKind = selectedKind === button.dataset.kind ? null : button.dataset.kind;
 	selectedTower = null;
+	selectedCritter = null;
+	pendingSpot = null;
+	render();
+});
+
+$("#forecast").addEventListener("click", (event) => {
+	const foe = event.target.closest(".foe");
+	if (!foe) return;
+	selectedCritter = selectedCritter === foe.dataset.critter ? null : foe.dataset.critter;
+	selectedKind = null;
+	selectedTower = null;
+	pendingSpot = null;
 	render();
 });
 
@@ -1783,13 +1964,44 @@ mapEl.addEventListener("click", (event) => {
 	if (!S || S.status !== "day") return;
 	const spot = event.target.closest(".spot");
 	if (spot && selectedKind) {
-		send({ type: "build", kind: selectedKind, x: Number(spot.dataset.x), y: Number(spot.dataset.y) });
+		const x = Number(spot.dataset.x);
+		const y = Number(spot.dataset.y);
+		// 第一次点只预览范围和组合，点同一格第二次才建造
+		if (pendingSpot && pendingSpot.x === x && pendingSpot.y === y) {
+			const def = TOWERS[selectedKind];
+			const cost = S.perks[mySeat()].sale ? Math.ceil(def.cost / 2) : def.cost;
+			if (S.stars[mySeat()] < cost) toast("星星不够，可以找对方要一点");
+			else send({ type: "build", kind: selectedKind, x, y });
+			return;
+		}
+		pendingSpot = { x, y };
+		render();
 		return;
 	}
 	const tower = event.target.closest(".tower");
 	selectedTower = tower && Number(tower.dataset.id) !== selectedTower ? Number(tower.dataset.id) : null;
-	if (tower) selectedKind = null;
+	if (tower) {
+		selectedKind = null;
+		selectedCritter = null;
+		pendingSpot = null;
+	}
 	render();
+});
+
+$("#btn-restart").addEventListener("click", () => {
+	const S = current();
+	const votes = S.restartVote || [false, false];
+	if (votes[mySeat()]) send({ type: "restartVote", agree: false });
+	else if (votes[1 - mySeat()]) send({ type: "restartVote" });
+	else if (Date.now() - restartArmed < 3000) {
+		restartArmed = 0;
+		send({ type: "restartVote" });
+	} else {
+		// 第一下只是提醒，3 秒内再点一下才真的发起
+		restartArmed = Date.now();
+		render();
+		setTimeout(render, 3100);
+	}
 });
 
 $("#btn-gift").addEventListener("click", () => {

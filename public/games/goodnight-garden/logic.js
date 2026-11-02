@@ -503,6 +503,7 @@ export function createState() {
 		holds: [0, 0],
 		run: null,
 		cards: null,
+		restartVote: [false, false],
 	};
 }
 
@@ -661,6 +662,19 @@ export function applyAction(current, action, { seat, playerCount, now = Date.now
 			return ok(state, { type: "revive" });
 		}
 		return ok(state, { type: "hold", seat });
+	}
+
+	// 中途重开要两人都同意；任何一方说"再想想"就取消
+	if (type === "restartVote") {
+		const votes = state.restartVote || [false, false];
+		if (action.agree === false) {
+			state.restartVote = [false, false];
+			return ok(state, { type: "restartVote", seat, agree: false });
+		}
+		votes[seat] = true;
+		state.restartVote = votes;
+		if (votes.every(Boolean)) return ok(createState(), { type: "restart" });
+		return ok(state, { type: "restartVote", seat, agree: true });
 	}
 
 	if (type === "restart") {
