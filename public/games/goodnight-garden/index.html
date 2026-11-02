@@ -337,6 +337,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 }
 
 .spot:hover::before { background: rgba(255, 255, 255, 0.75); }
+.spot.combo::before { border-color: var(--pink-deep); background: rgba(255, 229, 236, 0.75); }
+.spot.combo::after {
+	content: "✦";
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	color: var(--pink-deep);
+	font-size: calc(var(--c) * 0.42);
+}
 
 .tower {
 	position: absolute;
@@ -417,6 +427,26 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .unit.monkey .body { animation: hop 0.5s ease-in-out infinite; }
 .unit.eating .body { animation: nibble 0.3s ease-in-out infinite; }
 .unit.dazed .body { animation: daze 0.6s ease-in-out infinite; }
+.unit.slowed .body { filter: drop-shadow(0 0 4px rgba(255, 210, 90, 0.95)) drop-shadow(0 2px 2px rgba(30, 20, 60, 0.35)); }
+.unit.drowsy::after {
+	content: "z";
+	position: absolute;
+	right: -4px;
+	top: -10px;
+	font-family: var(--font-display);
+	font-size: 12px;
+	color: #fff;
+	text-shadow: 0 0 3px var(--lav-deep);
+	animation: snooze 1.2s ease-in-out infinite;
+}
+
+@keyframes snooze {
+	0% { opacity: 0; transform: translate(0, 4px) scale(0.7); }
+	40% { opacity: 1; }
+	100% { opacity: 0; transform: translate(6px, -8px) scale(1.1); }
+}
+
+.tower.shining { box-shadow: inset 0 0 0 2px rgba(255, 220, 120, 0.95), 0 0 18px 4px rgba(255, 214, 102, 0.75); }
 
 @keyframes hop { 50% { transform: translateY(-18%); } }
 @keyframes nibble { 50% { transform: rotate(-8deg) scale(0.95); } }
@@ -441,7 +471,43 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 	border-radius: 2px;
 }
 
-.fx-drop, .fx-ring, .fx-pop, .fx-sleep, .fx-rainbow, .fx-heart, .fx-steal { position: absolute; left: 0; top: 0; pointer-events: none; }
+.fx-drop, .fx-ring, .fx-pop, .fx-sleep, .fx-rainbow, .fx-heart, .fx-steal, .proj, .bit, .puff, .leaf, .wisp { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+/* 弹道：水滴、花露水、草团、向阳草团、花粉团 */
+.proj { z-index: 6; will-change: transform; }
+.proj.drop, .proj.dew {
+	width: 10px;
+	height: 13px;
+	margin: -6px 0 0 -5px;
+	border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+	background: radial-gradient(circle at 35% 30%, #fff 0 18%, #8cc4f2 30%, #5a9fe0);
+	box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(40, 90, 160, 0.35);
+}
+.proj.dew { background: radial-gradient(circle at 35% 30%, #fff 0 18%, #ffb3c7 30%, #f07aa0); box-shadow: 0 0 0 1.5px #fff, 0 0 8px rgba(255, 157, 183, 0.8); }
+.proj.straw, .proj.sun, .proj.pollen {
+	width: 14px;
+	height: 14px;
+	margin: -7px 0 0 -7px;
+	border-radius: 50%;
+	background:
+		repeating-linear-gradient(35deg, transparent 0 2px, rgba(120, 80, 30, 0.45) 2px 3px),
+		radial-gradient(circle at 35% 35%, #ffe7a6, #d9a54d);
+	box-shadow: 0 0 0 1.5px #fff, 0 3px 6px rgba(80, 50, 20, 0.35);
+}
+.proj.sun { background: radial-gradient(circle at 35% 35%, #fff6c8, #ffc94a 55%, #f39c2b); box-shadow: 0 0 0 1.5px #fff, 0 0 12px rgba(255, 200, 70, 0.95); }
+.proj.pollen { width: 16px; height: 16px; margin: -8px 0 0 -8px; background: radial-gradient(circle at 40% 40%, #fffbe0, #ffe27a 50%, #f5c542); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 14px rgba(255, 226, 122, 0.95); }
+
+.bit { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; z-index: 6; }
+.bit.water { background: #8cc4f2; box-shadow: 0 0 0 1px #fff; }
+.bit.petal { width: 8px; height: 5px; border-radius: 50% 0; background: #ffb3c7; }
+.bit.dust { width: 7px; height: 7px; background: rgba(214, 186, 140, 0.9); }
+.bit.spark { width: 7px; height: 7px; border-radius: 1px; transform: rotate(45deg); background: #ffd24d; box-shadow: 0 0 6px #ffe48a; }
+.bit.pollen-dot { width: 7px; height: 7px; background: #ffe27a; box-shadow: 0 0 6px rgba(255, 226, 122, 0.95); }
+.puff { border-radius: 50%; background: radial-gradient(circle, rgba(255, 240, 170, 0.85), rgba(255, 226, 122, 0) 70%); z-index: 5; }
+.fx-ring.warm { border-color: rgba(255, 196, 120, 0.95); background: radial-gradient(circle, transparent 55%, rgba(255, 170, 90, 0.35)); }
+.leaf { width: 9px; height: 5px; margin: -2px 0 0 -4px; border-radius: 50% 0; background: #9bd77a; z-index: 5; }
+.leaf.warm { background: #ffb36b; }
+.wisp { margin: -10px 0 0 -8px; font-size: 16px; color: #ff9a6b; font-weight: 700; text-shadow: 0 0 4px #fff; z-index: 5; }
 
 .fx-drop {
 	width: 8px;
@@ -454,6 +520,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 }
 
 .fx-ring {
+	z-index: 1;
 	border-radius: 50%;
 	border: 3px solid rgba(255, 255, 255, 0.9);
 	background: radial-gradient(circle, transparent 55%, rgba(182, 162, 244, 0.35));
@@ -584,6 +651,34 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .sheet .acts .btn { font-size: 0.85rem; padding: 5px 14px; }
 
 .ready-btn { width: 100%; font-size: 1.1rem; padding: 10px 18px; }
+
+.dock-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.toggle { background: var(--mint-soft); color: var(--mint-deep); }
+.toggle.off { background: #efe9e4; color: #a8978b; text-decoration: line-through; }
+.chip.codex-btn { background: var(--pink-soft); color: var(--pink-deep); }
+
+.codex {
+	width: min(400px, calc(100vw - 32px));
+	max-height: min(640px, calc(100vh - 48px));
+	padding: 18px 16px 16px;
+	border: 1px solid var(--line);
+	border-radius: 24px;
+	background: var(--panel);
+	color: var(--ink);
+	box-shadow: 0 18px 44px rgba(150, 90, 70, 0.25);
+}
+.codex::backdrop { background: rgba(255, 248, 240, 0.6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.codex h2 { margin: 0 0 4px; font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; text-align: center; }
+.codex > p { margin: 0 0 12px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+.codex ul { display: grid; gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; }
+.codex li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border-radius: 16px; background: #fdf8f3; }
+.codex li.on { background: var(--pink-soft); box-shadow: inset 0 0 0 2px #ffc4d4; }
+.codex .pair { display: flex; align-items: center; gap: 2px; color: var(--muted); }
+.codex .pair .ico { width: 28px; height: 28px; }
+.codex b { font-family: var(--font-display); font-weight: 400; font-size: 1rem; }
+.codex b small { margin-left: 6px; font-family: var(--font-body); font-size: 0.7rem; color: var(--pink-deep); }
+.codex li p { margin: 2px 0 0; color: var(--muted); font-size: 0.75rem; line-height: 1.5; }
+.codex form { display: flex; justify-content: center; }
 
 .hint { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.6; text-align: center; text-wrap: balance; }
 
@@ -779,7 +874,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 				<div class="tally" id="tally"></div>
 			</div>
 			<div class="emotes" id="emotes"></div>
+			<div class="dock-foot">
+				<button class="chip codex-btn" id="btn-codex" type="button">✦ 组合图鉴</button>
+				<button class="chip toggle" id="btn-music" type="button">音乐</button>
+				<button class="chip toggle" id="btn-sfx" type="button">音效</button>
+			</div>
 		</section>
+
+		<dialog class="codex" id="codex" aria-labelledby="codex-title">
+			<h2 id="codex-title">组合图鉴</h2>
+			<p>兔兔的植物和猫猫的装置挨着（斜对角也算）就会触发，一座塔可以同时有好几个组合。</p>
+			<ul id="codex-list"></ul>
+			<form method="dialog"><button class="btn" type="submit">知道啦</button></form>
+		</dialog>
 
 		<div class="overlay" id="overlay" hidden>
 			<div class="panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
@@ -802,10 +909,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 <script type="module">
 import {
 	meta, COLS, ROWS, CELL, TICK_MS, NIGHTS, ROLES, TOWERS, COMBOS, CRITTERS, CARDS, EMOTES, WAVES, MAX_LEVEL,
-	PATHS, CRATE, PATH_CELLS, NIGHT_BONUS, REVIVE_BASKET, canBuildAt, comboMap, towerRange, upgradeCost, simulateNight, settle,
+	PATHS, CRATE, PATH_CELLS, NIGHT_BONUS, REVIVE_BASKET, WAVE_SPEED, FLAG_EATING, FLAG_DAZED, FLAG_SLOW, FLAG_DROWSY,
+	canBuildAt, comboMap, towerRange, upgradeCost, simulateNight, settle,
 } from "./logic.js";
 import { connectRoom, createRoom, getName, setName, inviteUrl, copyText, normalizeCode } from "/shared/room-client.js";
 import { icon } from "/shared/icons.js";
+import { createSound } from "/shared/sound.js";
+
+const sound = createSound();
 
 const $ = (selector) => document.querySelector(selector);
 const mapEl = $("#map");
@@ -832,6 +943,7 @@ let replay = null;
 let settleTimer = 0;
 let toastTimer = 0;
 let holdTimer = 0;
+let lastStatus = null;
 
 const serverNow = () => Date.now() + clockOffset;
 const mySeat = () => view?.you ?? null;
@@ -897,6 +1009,19 @@ function drawGround() {
 	groundEl.replaceChildren(...nodes);
 }
 
+// 在 (x, y) 放下 kind 会和周围哪些塔组成组合
+function combosAt(S, kind, x, y) {
+	const names = [];
+	S.towers.forEach((tower) => {
+		if (Math.max(Math.abs(tower.x - x), Math.abs(tower.y - y)) !== 1) return;
+		COMBOS.forEach((combo) => {
+			const [a, b] = combo.pair;
+			if ((a === kind && b === tower.kind) || (b === kind && a === tower.kind)) names.push(combo.name);
+		});
+	});
+	return [...new Set(names)];
+}
+
 function drawTowers(S) {
 	const combos = comboMap(S.towers);
 	const night = S.status === "night";
@@ -935,7 +1060,9 @@ function drawTowers(S) {
 			for (let y = 0; y < ROWS; y += 1) {
 				if (!canBuildAt(S, x, y)) continue;
 				const spot = document.createElement("div");
-				spot.className = "spot";
+				const names = combosAt(S, selectedKind, x, y);
+				spot.className = "spot" + (names.length ? " combo" : "");
+				if (names.length) spot.title = names.join("、");
 				spot.dataset.x = String(x);
 				spot.dataset.y = String(y);
 				nodes.push(place(spot, x * C, y * C));
@@ -971,6 +1098,9 @@ function ensureReplay(S) {
 	}]));
 	replay = {
 		key, sim, towerPos,
+		towerKind: new Map(S.towers.map((tower) => [tower.id, tower.kind])),
+		flights: [],
+		ambientTick: -1,
 		startedAt: S.run.startedAt,
 		basket: S.run.before.basket,
 		kinds: new Map(sim.units.map((unit) => [unit.id, unit.kind])),
@@ -1001,47 +1131,183 @@ function animate(el, keyframes, options) {
 	fxEl.append(el);
 	const animation = el.animate(keyframes, options);
 	animation.onfinish = () => el.remove();
+	return animation;
 }
 
-function playEffect(effect, positions) {
-	if (reduceMotion && effect.type !== "steal") return;
+function fxAt(className, x, y, size) {
+	const el = document.createElement("div");
+	el.className = className;
+	if (size) el.style.width = el.style.height = `${size}px`;
+	el.style.left = `${x - (size || 0) / 2}px`;
+	el.style.top = `${y - (size || 0) / 2}px`;
+	return el;
+}
+
+// 塔出手时的小动作：洒水壶前倾、稻草人跳一下、风车鼓一下
+function kick(towerId, kind) {
+	const el = towersEl.querySelector(`.tower[data-id="${towerId}"] .ico`);
+	if (!el || reduceMotion) return;
+	const frames = {
+		sprinkler: [{ transform: "rotate(0)" }, { transform: "rotate(-14deg) translateY(-2px)" }, { transform: "rotate(0)" }],
+		scarecrow: [{ transform: "translateY(0)" }, { transform: "translateY(-22%) scale(1.08)" }, { transform: "translateY(0)" }],
+		windmill: [{ transform: "scale(1)" }, { transform: "scale(1.16)" }, { transform: "scale(1)" }],
+		carrot: [{ transform: "scale(1)" }, { transform: "scale(1.2) rotate(-6deg)" }, { transform: "scale(1)" }],
+	}[kind];
+	if (frames) el.animate(frames, { duration: kind === "scarecrow" ? 320 : 220, easing: "ease-out" });
+}
+
+// 某一步时小偷的位置：帧里找不到（已经睡着/跑掉）就用最后一次出现的位置
+function unitAt(id, tick) {
+	const { frames } = replay.sim;
+	for (let k = Math.min(tick, frames.length - 1); k >= 0; k -= 1) {
+		const row = frames[k].find((item) => item[0] === id);
+		if (row) return row;
+	}
+	return null;
+}
+
+const SHOT_LOOK = {
+	drop: { className: "proj drop", arc: 0.55, sound: "drop" },
+	dew: { className: "proj dew", arc: 0.55, sound: "dew" },
+	straw: { className: "proj straw", arc: 1.5, sound: "lob" },
+	sun: { className: "proj sun", arc: 1.6, sound: "lob" },
+	pollen: { className: "proj pollen", arc: 1.4, sound: "lob" },
+};
+
+const HIT_SOUND = { drop: "splash", dew: "splash", straw: "thud", sun: "sun", pollen: "pollen" };
+
+function launch(effect) {
 	const tower = replay.towerPos.get(effect.tower);
-	const unit = positions.get(effect.unit);
-	if (effect.type === "shot" && tower && unit) {
-		const drop = document.createElement("div");
-		drop.className = "fx-drop";
-		animate(drop, [
-			{ transform: `translate(${px(tower.x)}px, ${px(tower.y)}px)` },
-			{ transform: `translate(${px(unit[1])}px, ${px(unit[2])}px)` },
-		], { duration: 220, easing: "ease-in" });
-	} else if (effect.type === "ring" && tower) {
+	const target = unitAt(effect.unit, effect.arrive - 1);
+	if (!tower || !target) return;
+	const look = SHOT_LOOK[effect.style];
+	const el = document.createElement("div");
+	el.className = look.className;
+	fxEl.append(el);
+	replay.flights.push({
+		el, start: effect.tick, arrive: effect.arrive, arc: look.arc,
+		x0: tower.x, y0: tower.y - 250, x1: target[1], y1: target[2], spin: effect.style !== "drop" && effect.style !== "dew",
+	});
+	kick(effect.tower, replay.towerKind.get(effect.tower));
+	sound.play(look.sound);
+}
+
+function moveFlights(t) {
+	replay.flights = replay.flights.filter((flight) => {
+		const p = (t - flight.start) / Math.max(1, flight.arrive - flight.start);
+		if (p >= 1 || p < 0) {
+			flight.el.remove();
+			return false;
+		}
+		const x = px(flight.x0 + (flight.x1 - flight.x0) * p);
+		const lift = 4 * p * (1 - p) * flight.arc * C;
+		const y = px(flight.y0 + (flight.y1 - flight.y0) * p) - lift;
+		// 水滴顺着弹道方向转，草团一路打滚
+		const vx = flight.x1 - flight.x0;
+		const vy = (flight.y1 - flight.y0) - (4 * (1 - 2 * p) * flight.arc * CELL);
+		const angle = flight.spin ? p * 540 : Math.atan2(vy, vx) * 180 / Math.PI + 90;
+		flight.el.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg)`;
+		return true;
+	});
+}
+
+function burst(className, x, y, count, spread, duration) {
+	for (let i = 0; i < count; i += 1) {
+		const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+		const bit = fxAt(className, x, y);
+		animate(bit, [
+			{ transform: "translate(0, 0) scale(1)", opacity: 1 },
+			{ transform: `translate(${Math.cos(angle) * spread}px, ${Math.sin(angle) * spread - spread * 0.3}px) scale(0.4)`, opacity: 0 },
+		], { duration, easing: "cubic-bezier(.2,.7,.4,1)" });
+	}
+}
+
+function impact(effect) {
+	const x = px(effect.x);
+	const y = px(effect.y);
+	sound.play(HIT_SOUND[effect.style]);
+	if (reduceMotion) return;
+	if (effect.style === "drop") burst("bit water", x, y, 5, C * 0.45, 380);
+	if (effect.style === "dew") burst("bit petal", x, y, 6, C * 0.55, 520);
+	if (effect.style === "straw") burst("bit dust", x, y, 5, C * 0.5, 420);
+	if (effect.style === "sun") burst("bit spark", x, y, 7, C * 0.6, 500);
+	if (effect.style === "pollen") {
+		burst("bit pollen-dot", x, y, 9, C * 0.8, 700);
+		animate(fxAt("puff", x, y, C * 1.4), [{ transform: "scale(0.3)", opacity: 0.9 }, { transform: "scale(1)", opacity: 0 }], { duration: 650, easing: "ease-out" });
+	}
+	if (effect.style !== "drop" && effect.style !== "dew") {
+		const pop = fxAt("fx-pop", x, y);
+		pop.textContent = effect.style === "pollen" ? "z" : "!";
+		animate(pop, [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(-14px)" }], { duration: 600 });
+	}
+}
+
+function playEffect(effect) {
+	const tower = replay.towerPos.get(effect.tower);
+	if (effect.type === "shot") {
+		launch(effect);
+	} else if (effect.type === "hit") {
+		impact(effect);
+	} else if (effect.type === "wave" && tower) {
+		sound.play(effect.style === "warm" ? "warm" : "wind");
+		kick(effect.tower, "windmill");
+		if (reduceMotion) return;
 		const size = px(tower.range) * 2;
-		const ring = document.createElement("div");
-		ring.className = "fx-ring";
-		ring.style.width = ring.style.height = `${size}px`;
-		ring.style.left = `${px(tower.x) - size / 2}px`;
-		ring.style.top = `${px(tower.y) - size / 2}px`;
-		animate(ring, [{ transform: "scale(0.25)", opacity: 0.9 }, { transform: "scale(1)", opacity: 0 }], { duration: 700, easing: "ease-out" });
+		animate(fxAt(`fx-ring ${effect.style}`, px(tower.x), px(tower.y), size), [
+			{ transform: "scale(0.15)", opacity: 0.95 },
+			{ transform: "scale(1)", opacity: 0 },
+		], { duration: Math.round(tower.range / WAVE_SPEED * TICK_MS) + 250, easing: "cubic-bezier(.3,.6,.5,1)" });
+		// 风里带几片小叶子转着往外飞
+		for (let i = 0; i < 6; i += 1) {
+			const angle = (i / 6) * Math.PI * 2;
+			const leaf = fxAt(`leaf ${effect.style}`, px(tower.x), px(tower.y));
+			const r = px(tower.range);
+			animate(leaf, [
+				{ transform: "translate(0, 0) rotate(0deg)", opacity: 1 },
+				{ transform: `translate(${Math.cos(angle) * r}px, ${Math.sin(angle) * r}px) rotate(${360 + i * 40}deg)`, opacity: 0 },
+			], { duration: Math.round(tower.range / WAVE_SPEED * TICK_MS) + 200, easing: "ease-out" });
+		}
 	} else if (effect.type === "rainbow" && tower) {
-		const size = px(tower.range) * 1.2;
+		sound.play("rainbow");
+		if (reduceMotion) return;
+		const size = px(tower.range) * 1.3;
 		const bow = document.createElement("div");
 		bow.className = "fx-rainbow";
 		bow.style.width = `${size}px`;
 		bow.style.height = `${size / 2}px`;
 		bow.style.left = `${px(tower.x) - size / 2}px`;
 		bow.style.top = `${px(tower.y) - size / 2}px`;
-		animate(bow, [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0 }], { duration: 1100 });
-	} else if (effect.type === "push" && unit) {
-		const pop = document.createElement("div");
-		pop.className = "fx-pop";
-		pop.textContent = "!";
-		pop.style.transform = `translate(${px(unit[1])}px, ${px(unit[2])}px)`;
-		animate(pop, [{ opacity: 1 }, { opacity: 0, marginTop: "-34px" }], { duration: 600 });
-	} else if (effect.type === "lure" && unit) {
+		animate(bow, [{ opacity: 0, transform: "scaleX(0.3)" }, { opacity: 1, transform: "scaleX(1)", offset: 0.25 }, { opacity: 0 }], { duration: 1200 });
+		burst("bit spark", px(tower.x), px(tower.y) - size / 3, 6, C * 0.6, 700);
+	} else if (effect.type === "lure") {
+		const unit = unitAt(effect.unit, effect.tick);
+		sound.play(effect.style === "carrot" ? "lure" : effect.style);
+		kick(effect.tower, "carrot");
+		if (!unit || reduceMotion) return;
 		const heart = iconEl("heart", "fx-heart");
 		heart.style.transform = `translate(${px(unit[1])}px, ${px(unit[2])}px)`;
 		animate(heart, [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0, marginTop: "-36px" }], { duration: 900 });
+		if (effect.style === "scent" && tower) {
+			for (let i = 0; i < 3; i += 1) {
+				const wisp = fxAt("wisp", px(tower.x), px(tower.y) - C * 0.3);
+				wisp.textContent = "～";
+				animate(wisp, [
+					{ transform: "translate(0, 0)", opacity: 0 },
+					{ opacity: 0.9, offset: 0.3 },
+					{ transform: `translate(${px(unit[1] - tower.x)}px, ${px(unit[2] - tower.y) - C * 0.3}px)`, opacity: 0 },
+				], { duration: 700, delay: i * 120, easing: "ease-in-out" });
+			}
+		}
+	} else if (effect.type === "trap") {
+		const unit = unitAt(effect.unit, effect.tick);
+		sound.play("trap");
+		if (!unit || reduceMotion) return;
+		const pop = fxAt("fx-pop", px(unit[1]), px(unit[2]));
+		pop.textContent = "!";
+		animate(pop, [{ opacity: 1 }, { opacity: 0, transform: "translateY(-14px)" }], { duration: 600 });
 	} else if (effect.type === "sleep") {
+		sound.play("sleep");
+		if (reduceMotion) return;
 		const kind = replay.kinds.get(effect.unit);
 		const size = C * 0.7;
 		const box = document.createElement("div");
@@ -1058,6 +1324,7 @@ function playEffect(effect, positions) {
 			{ transform: `translateY(${-C * 2.2}px) scale(0.9)`, opacity: 0 },
 		], { duration: 1800, easing: "ease-out" });
 	} else if (effect.type === "steal") {
+		sound.play("steal");
 		const text = document.createElement("div");
 		text.className = "fx-steal";
 		text.textContent = `-${effect.amount}`;
@@ -1072,6 +1339,34 @@ function playEffect(effect, positions) {
 	}
 }
 
+// 小雏菊的花粉：纯装饰，每隔一会儿从花里飘一点到范围内的小偷身上；向日葵有小偷在范围内时发光
+function ambient(frame, i) {
+	if (i === replay.ambientTick) return;
+	replay.ambientTick = i;
+	replay.towerPos.forEach((tower, id) => {
+		const kind = replay.towerKind.get(id);
+		if (kind !== "daisy" && kind !== "sunflower") return;
+		const r2 = tower.range * tower.range;
+		const inRange = frame.filter((row) => {
+			const dx = row[1] - tower.x;
+			const dy = row[2] - tower.y;
+			return dx * dx + dy * dy <= r2 && !CRITTERS[replay.kinds.get(row[0])].jump;
+		});
+		if (kind === "sunflower") {
+			towersEl.querySelector(`.tower[data-id="${id}"]`)?.classList.toggle("shining", inRange.length > 0);
+			return;
+		}
+		if (reduceMotion || !inRange.length || (i + id) % 7 !== 0) return;
+		const target = inRange[(i + id) % inRange.length];
+		const dot = fxAt("bit pollen-dot", px(tower.x), px(tower.y) - C * 0.2);
+		animate(dot, [
+			{ transform: "translate(0, 0)", opacity: 0 },
+			{ transform: `translate(${px(target[1] - tower.x) * 0.5}px, ${px(target[2] - tower.y) * 0.5 - C * 0.5}px)`, opacity: 1, offset: 0.5 },
+			{ transform: `translate(${px(target[1] - tower.x)}px, ${px(target[2] - tower.y)}px)`, opacity: 0 },
+		], { duration: 1100, easing: "ease-in-out" });
+	});
+}
+
 function step() {
 	if (!replay) return;
 	const { sim } = replay;
@@ -1081,7 +1376,6 @@ function step() {
 	const f = t >= last ? 0 : Math.max(0, t - Math.floor(t));
 	const frame = sim.frames[i];
 	const next = new Map((sim.frames[i + 1] || frame).map((row) => [row[0], row]));
-	const positions = new Map(frame.map((row) => [row[0], row]));
 	const seen = new Set();
 	frame.forEach(([id, x, y, hp, flag]) => {
 		seen.add(id);
@@ -1094,8 +1388,10 @@ function step() {
 		const n = next.get(id) || [id, x, y];
 		el.style.transform = `translate(${px(x + (n[1] - x) * f)}px, ${px(y + (n[2] - y) * f)}px)`;
 		el.style.setProperty("--hp", hp);
-		el.classList.toggle("eating", flag === 1);
-		el.classList.toggle("dazed", flag === 2);
+		el.classList.toggle("eating", (flag & FLAG_EATING) > 0);
+		el.classList.toggle("dazed", (flag & FLAG_DAZED) > 0);
+		el.classList.toggle("slowed", (flag & FLAG_SLOW) > 0);
+		el.classList.toggle("drowsy", (flag & FLAG_DROWSY) > 0);
 	});
 	replay.els.forEach((el, id) => {
 		if (seen.has(id)) return;
@@ -1108,8 +1404,10 @@ function step() {
 		if (effect.type === "sleep") replay.slept += 1;
 		if (effect.type === "steal") replay.stolen += effect.amount;
 		// 断线重连追进度时跳过已经过去的特效
-		if (i - effect.tick < 6) playEffect(effect, positions);
+		if (i - effect.tick < 6) playEffect(effect);
 	}
+	moveFlights(t);
+	ambient(frame, i);
 	$("#basket").textContent = String(Math.max(0, replay.basket - replay.stolen));
 	$("#tally").innerHTML = `<span>哄睡 <b>${replay.slept}</b> 只</span><span>被叼走 <b>${replay.stolen}</b> 颗菜</span>`;
 	replay.raf = requestAnimationFrame(step);
@@ -1147,6 +1445,13 @@ function render() {
 	renderForecast(S);
 	renderDock(S);
 	renderOverlay(S);
+	sound.setTheme(night ? "night" : "day");
+	if (lastStatus && lastStatus !== S.status) {
+		if (S.status === "dawn") sound.play("dawn");
+		if (S.status === "fail") sound.play("fail");
+		if (S.status === "win") sound.play("win");
+	}
+	lastStatus = S.status;
 	// 复活成功后按钮已经被换掉，收不到松手事件，这里停掉持续发送
 	if (S.status !== "fail") stopHolding();
 
@@ -1295,7 +1600,7 @@ function renderDock(S) {
 	ready.textContent = S.ready[seat] ? "取消准备" : "准备好了，天黑吧";
 	const partner = ROLES[1 - seat];
 	$("#hint").textContent = selectedKind
-		? `点地图上的虚线格子放下${TOWERS[selectedKind].name}，再点一次卡片取消`
+		? `点虚线格子放下${TOWERS[selectedKind].name}，粉色 ✦ 格子能和对方的塔组合；再点一次卡片取消`
 		: `你是${ROLES[seat].name}，负责${ROLES[seat].towers.map((kind) => TOWERS[kind].name).join("、")}；${partner.name}负责${partner.towers.map((kind) => TOWERS[kind].name).join("、")}。两人的塔挨着会有组合效果 ✦`;
 }
 
@@ -1453,6 +1758,9 @@ function onServerMessage(message) {
 	view = message;
 	const event = message.event;
 	if (event?.type === "emote") showEmote(event.seat, event.name);
+	const cue = { build: "build", upgrade: "upgrade", sell: "sell", night: "night", pick: "pop", gift: "gift", emote: "pop", revive: "win", restart: "pop" }[event?.type];
+	if (cue) sound.play(cue);
+	if (event?.type === "ready" && event.ready) sound.play("ready");
 	if (event?.type === "build") freshTower = event.tower;
 	if (event?.type === "gift" && event.seat !== mySeat()) toast(`${nameOf(event.seat)}送了你 ${event.amount} 颗星星`);
 	if (event?.type === "revive") toast(`复活啦，菜筐补到 ${REVIVE_BASKET} 颗，重新布置一下吧`);
@@ -1504,6 +1812,52 @@ $("#emotes").replaceChildren(...Object.entries(EMOTES).map(([name, label]) => {
 }));
 
 $("#btn-invite").addEventListener("click", copyInvite);
+
+function renderCodex() {
+	const S = view && current();
+	const active = new Set();
+	if (S) comboMap(S.towers).forEach((set) => set.forEach((id) => active.add(id)));
+	$("#codex-list").replaceChildren(...COMBOS.map((combo) => {
+		const item = document.createElement("li");
+		item.className = active.has(combo.id) ? "on" : "";
+		const pair = document.createElement("span");
+		pair.className = "pair";
+		pair.append(iconEl(TOWERS[combo.pair[0]].icon), document.createTextNode("+"), iconEl(TOWERS[combo.pair[1]].icon));
+		const text = document.createElement("div");
+		const name = document.createElement("b");
+		name.textContent = combo.name;
+		if (active.has(combo.id)) {
+			const tag = document.createElement("small");
+			tag.textContent = "已触发";
+			name.append(tag);
+		}
+		const desc = document.createElement("p");
+		desc.textContent = `${TOWERS[combo.pair[0]].name} + ${TOWERS[combo.pair[1]].name}：${combo.desc}`;
+		text.append(name, desc);
+		item.append(pair, text);
+		return item;
+	}));
+}
+
+$("#btn-codex").addEventListener("click", () => {
+	renderCodex();
+	$("#codex").showModal();
+});
+
+function renderToggles() {
+	[["#btn-music", "music", "音乐"], ["#btn-sfx", "sfx", "音效"]].forEach(([selector, kind, label]) => {
+		const button = $(selector);
+		const on = sound.prefs[kind];
+		button.classList.toggle("off", !on);
+		button.textContent = `${label}${on ? "开" : "关"}`;
+		button.setAttribute("aria-pressed", String(on));
+	});
+}
+
+$("#btn-music").addEventListener("click", () => sound.toggle("music"));
+$("#btn-sfx").addEventListener("click", () => sound.toggle("sfx"));
+sound.onChange(renderToggles);
+renderToggles();
 window.addEventListener("resize", render);
 
 function connect(name) {

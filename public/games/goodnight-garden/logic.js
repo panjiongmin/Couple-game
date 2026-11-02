@@ -72,12 +72,24 @@ export function upgradeCost(kind, level) {
 	return level === 1 ? base : Math.round(base * 1.5);
 }
 
-// 兔兔和猫猫的塔紧挨着（含斜对角）时触发组合。
+// 兔兔的植物和猫猫的装置紧挨着（含斜对角）时触发组合，3 × 3 每一对都有自己的效果。
 export const COMBOS = [
-	{ id: "breeze", name: "晚风花香", pair: ["daisy", "windmill"], desc: "小雏菊的花香被风吹得更远，范围 +0.6 格" },
 	{ id: "rainbow", name: "小彩虹", pair: ["sunflower", "sprinkler"], desc: "洒水壶每 4 秒挂一道彩虹，范围内的小偷看呆 1 秒" },
+	{ id: "sunguard", name: "向阳守卫", pair: ["sunflower", "scarecrow"], desc: "稻草人扔得更有劲，吓退距离 +50%，砸中的小偷 2 秒内慢吞吞" },
+	{ id: "warmwind", name: "暖风", pair: ["sunflower", "windmill"], desc: "风车吹的是暖风，被吹到的小偷 3 秒内走得慢" },
+	{ id: "dew", name: "花露水", pair: ["daisy", "sprinkler"], desc: "洒水壶的水带着花香，淋到的小偷 3 秒内一直犯困" },
+	{ id: "lullaby", name: "催眠稻草人", pair: ["daisy", "scarecrow"], desc: "稻草人扔的是花粉团，砸中一下困一大截" },
+	{ id: "breeze", name: "晚风花香", pair: ["daisy", "windmill"], desc: "小雏菊的花香被风吹远，范围 +0.6 格" },
 	{ id: "trap", name: "陷阱路口", pair: ["carrot", "scarecrow"], desc: "啃完胡萝卜的小偷会被吓退 1 格" },
+	{ id: "sprout", name: "浇水萝卜", pair: ["carrot", "sprinkler"], desc: "胡萝卜被浇得又大又甜，同时能引 4 只，啃得更久" },
+	{ id: "scent", name: "香味飘远", pair: ["carrot", "windmill"], desc: "风把萝卜香吹远，范围 +0.8 格，连小猴子也会被引过来" },
 ];
+
+// 弹道：洒水壶的水滴和稻草人扔的草团都要飞一会儿才落到小偷身上，风车的风一圈圈往外推。
+export const DROP_SPEED = 350;   // 水滴每步飞多远
+export const LOB_SPEED = 250;    // 草团每步飞多远（抛得高，飞得慢）
+export const WAVE_SPEED = 450;   // 风每步往外推多远
+const flightTicks = (dx, dy, speed, base) => base + Math.floor((Math.abs(dx) + Math.abs(dy)) / speed);
 
 export const CRITTERS = {
 	pig: { name: "小猪", icon: "pig", hp: 1100, speed: 45, steal: 1, reward: 2, desc: "慢吞吞，很难哄睡" },
@@ -188,8 +200,10 @@ export function comboMap(towers) {
 
 export function towerRange(tower, combos = comboMap([tower])) {
 	const def = TOWERS[tower.kind];
+	const set = combos.get(tower.id);
 	let range = def.range[tower.level - 1];
-	if (tower.kind === "daisy" && combos.get(tower.id)?.has("breeze")) range += 600;
+	if (tower.kind === "daisy" && set?.has("breeze")) range += 600;
+	if (tower.kind === "carrot" && set?.has("scent")) range += 800;
 	return range;
 }
 
@@ -199,9 +213,16 @@ function within(unit, tower) {
 	return dx * dx + dy * dy <= tower.r2;
 }
 
+// 帧里每只小偷的状态位
+export const FLAG_EATING = 1;
+export const FLAG_DAZED = 2;
+export const FLAG_SLOW = 4;
+export const FLAG_DROWSY = 8;
+
 /**
  * 演算一整夜。输入只有当晚序号、塔和菜筐里的菜，不用随机数，结果完全可复现。
  * record 为 true 时额外返回逐步的位置帧和特效，给前端播放用。
+ * 水滴、草团和风都有飞行时间：出手时记下落点的步数，到那一步才生效，前端照着画弹道。
  */
 export function simulateNight({ night, towers, basket }, { record = false } = {}) {
 	const spawns = waveSpawns(night);
@@ -209,19 +230,18 @@ export function simulateNight({ night, towers, basket }, { record = false } = {}
 	const combos = comboMap(towers);
 	const sim = towers.slice().sort((a, b) => a.id - b.id).map((tower) => {
 		const def = TOWERS[tower.kind];
-		const level = tower.level - 1;
 		const set = combos.get(tower.id);
 		const range = towerRange(tower, combos);
 		return {
 			id: tower.id,
 			kind: tower.kind,
-			level,
+			level: tower.level - 1,
 			x: tower.x * CELL + 500,
 			y: tower.y * CELL + 500,
 			r2: range * range,
 			cd: 0,
 			rainbow: tower.kind === "sprinkler" && set.has("rainbow") ? 40 : -1,
-			trap: tower.kind === "carrot" && set.has("trap"),
+			has: (id) => set.has(id),
 			busy: 0,
 			def,
 		};
@@ -230,6 +250,7 @@ export function simulateNight({ night, towers, basket }, { record = false } = {}
 	const units = [];
 	const frames = [];
 	const effects = [];
+	const pending = [];   // 还在路上的水滴/草团/风：{ at, unit, apply }
 	const slept = { pig: 0, mouse: 0, monkey: 0, fox: 0 };
 	let spawnIndex = 0;
 	let stolen = 0;
@@ -238,51 +259,101 @@ export function simulateNight({ night, towers, basket }, { record = false } = {}
 	let failed = false;
 	let tick = 0;
 
+	const slowFor = (unit, pct, ticks) => {
+		if (pct >= unit.timedSlow || unit.timedSlowTicks <= 0) unit.timedSlow = pct;
+		unit.timedSlowTicks = Math.max(unit.timedSlowTicks, ticks);
+	};
+	const drowsyFor = (unit, perTick, ticks) => {
+		unit.dot = Math.max(unit.dot, perTick);
+		unit.dotTicks = Math.max(unit.dotTicks, ticks);
+	};
+
 	for (; tick < MAX_TICKS; tick += 1) {
 		while (spawnIndex < spawns.length && spawns[spawnIndex].tick === tick) {
 			const spawn = spawns[spawnIndex];
 			const def = CRITTERS[spawn.kind];
+			const hp = Math.floor(def.hp * hpScale / 100);
 			units.push({
 				id: units.length, kind: spawn.kind, lane: spawn.lane, def,
-				d: 0, x: 0, y: 0, hp: Math.floor(def.hp * hpScale / 100), maxHp: Math.floor(def.hp * hpScale / 100), stun: 0, eat: 0, eatFrom: -1, eaten: [], status: "walk",
+				d: 0, x: 0, y: 0, hp, maxHp: hp, incoming: 0,
+				stun: 0, eat: 0, eatFrom: -1, eaten: [],
+				slow: 0, timedSlow: 0, timedSlowTicks: 0, dot: 0, dotTicks: 0, drowsy: false,
+				status: "walk",
 			});
 			spawnIndex += 1;
 		}
 		const active = units.filter((unit) => unit.status === "walk");
 		active.forEach((unit) => { [unit.x, unit.y] = pathPoint(unit.lane, unit.d); });
 
+		// 落地：这一步到达的水滴、草团和风。目标已经睡着或跑掉就落空。
+		for (let i = pending.length - 1; i >= 0; i -= 1) {
+			const hit = pending[i];
+			if (hit.at !== tick) continue;
+			pending.splice(i, 1);
+			const unit = units[hit.unit];
+			unit.incoming -= hit.damage;
+			if (unit.status !== "walk") continue;
+			hit.apply(unit);
+			if (record && hit.style) effects.push({ tick, type: "hit", unit: unit.id, style: hit.style, x: unit.x, y: unit.y });
+		}
+
 		// 光环：向日葵减速、小雏菊持续犯困。蹦跳的小猴子碰不到。
 		active.forEach((unit) => {
-			unit.slow = 0;
-			if (unit.def.jump) return;
-			sim.forEach((tower) => {
-				if (!within(unit, tower)) return;
-				if (tower.kind === "sunflower") unit.slow = Math.max(unit.slow, tower.def.slow[tower.level]);
-				if (tower.kind === "daisy") unit.hp -= tower.def.drip[tower.level];
-			});
+			let aura = 0;
+			unit.drowsy = false;
+			if (!unit.def.jump) {
+				sim.forEach((tower) => {
+					if (!within(unit, tower)) return;
+					if (tower.kind === "sunflower") aura = Math.max(aura, tower.def.slow[tower.level]);
+					if (tower.kind === "daisy") {
+						unit.hp -= tower.def.drip[tower.level];
+						unit.drowsy = true;
+					}
+				});
+			}
+			if (unit.dotTicks > 0) {
+				unit.hp -= unit.dot;
+				unit.dotTicks -= 1;
+				unit.drowsy = true;
+			}
+			if (unit.timedSlowTicks > 0) unit.timedSlowTicks -= 1;
+			unit.slow = Math.min(60, Math.max(aura, unit.timedSlowTicks > 0 ? unit.timedSlow : 0));
 		});
 
-		// 跑得最远的排前面，作为单体目标的优先顺序。
+		// 跑得最远的排前面，作为单体目标的优先顺序；已经有足够水滴在路上的不再瞄准。
 		const ahead = active.slice().sort((a, b) => b.d - a.d || a.id - b.id);
 		sim.forEach((tower) => {
 			const def = tower.def;
+			const L = tower.level;
 			if (tower.kind === "sprinkler") {
 				if (tower.cd > 0) tower.cd -= 1;
 				else {
-					const target = ahead.find((unit) => unit.hp > 0 && within(unit, tower));
+					const target = ahead.find((unit) => unit.hp - unit.incoming > 0 && within(unit, tower));
 					if (target) {
-						target.hp -= def.damage[tower.level];
-						tower.cd = def.cooldown[tower.level];
-						if (record) effects.push({ tick, type: "shot", tower: tower.id, unit: target.id });
+						const damage = def.damage[L];
+						const dew = tower.has("dew");
+						const at = tick + flightTicks(target.x - tower.x, target.y - tower.y, DROP_SPEED, 2);
+						target.incoming += damage;
+						pending.push({
+							at, unit: target.id, damage, style: dew ? "dew" : "drop",
+							apply: (unit) => {
+								unit.hp -= damage;
+								if (dew) drowsyFor(unit, 8, 30);
+							},
+						});
+						tower.cd = def.cooldown[L];
+						if (record) effects.push({ tick, type: "shot", tower: tower.id, unit: target.id, arrive: at, style: dew ? "dew" : "drop" });
 					}
 				}
 				if (tower.rainbow >= 0) {
 					if (tower.rainbow > 0) tower.rainbow -= 1;
 					else {
 						const hit = active.filter((unit) => within(unit, tower));
-						hit.forEach((unit) => { unit.stun = Math.max(unit.stun, unit.def.boss ? 5 : 10); });
-						tower.rainbow = 40;
-						if (record) effects.push({ tick, type: "rainbow", tower: tower.id });
+						if (hit.length) {
+							hit.forEach((unit) => { unit.stun = Math.max(unit.stun, unit.def.boss ? 5 : 10); });
+							tower.rainbow = 40;
+							if (record) effects.push({ tick, type: "rainbow", tower: tower.id });
+						}
 					}
 				}
 			} else if (tower.kind === "windmill") {
@@ -290,9 +361,22 @@ export function simulateNight({ night, towers, basket }, { record = false } = {}
 				else {
 					const hit = active.filter((unit) => within(unit, tower));
 					if (hit.length) {
-						hit.forEach((unit) => { unit.hp -= def.damage[tower.level]; });
-						tower.cd = def.cooldown[tower.level];
-						if (record) effects.push({ tick, type: "ring", tower: tower.id });
+						const damage = def.damage[L];
+						const warm = tower.has("warmwind");
+						// 风从风车往外推，离得越远吹到得越晚
+						hit.forEach((unit) => {
+							unit.incoming += damage;
+							pending.push({
+								at: tick + flightTicks(unit.x - tower.x, unit.y - tower.y, WAVE_SPEED, 1),
+								unit: unit.id, damage, style: null,
+								apply: (target) => {
+									target.hp -= damage;
+									if (warm) slowFor(target, 25, 30);
+								},
+							});
+						});
+						tower.cd = def.cooldown[L];
+						if (record) effects.push({ tick, type: "wave", tower: tower.id, style: warm ? "warm" : "wind" });
 					}
 				}
 			} else if (tower.kind === "scarecrow") {
@@ -300,21 +384,36 @@ export function simulateNight({ night, towers, basket }, { record = false } = {}
 				else {
 					const target = ahead.find((unit) => !unit.def.jump && !unit.def.burrow && within(unit, tower));
 					if (target) {
-						const push = target.def.boss ? def.push[tower.level] / 2 : def.push[tower.level];
-						target.d = Math.max(0, target.d - push);
-						target.hp -= def.damage[tower.level];
-						tower.cd = def.cooldown[tower.level];
-						if (record) effects.push({ tick, type: "push", tower: tower.id, unit: target.id });
+						const sun = tower.has("sunguard");
+						const pollen = tower.has("lullaby");
+						const damage = def.damage[L] * (pollen ? 4 : 1);
+						const push = Math.floor(def.push[L] * (sun ? 3 : 2) / 2);
+						const style = pollen ? "pollen" : sun ? "sun" : "straw";
+						const at = tick + flightTicks(target.x - tower.x, target.y - tower.y, LOB_SPEED, 3);
+						target.incoming += damage;
+						pending.push({
+							at, unit: target.id, damage, style,
+							apply: (unit) => {
+								unit.d = Math.max(0, unit.d - (unit.def.boss ? push / 2 : push));
+								unit.hp -= damage;
+								if (sun) slowFor(unit, 35, 20);
+							},
+						});
+						tower.cd = def.cooldown[L];
+						if (record) effects.push({ tick, type: "shot", tower: tower.id, unit: target.id, arrive: at, style });
 					}
 				}
 			} else if (tower.kind === "carrot") {
+				const sprout = tower.has("sprout");
+				const scent = tower.has("scent");
+				const capacity = sprout ? 4 : 2;
 				ahead.forEach((unit) => {
-					if (tower.busy >= 2 || unit.def.jump || unit.eat > 0 || unit.eaten.includes(tower.id) || !within(unit, tower)) return;
-					unit.eat = def.hold[tower.level];
+					if (tower.busy >= capacity || (unit.def.jump && !scent) || unit.eat > 0 || unit.eaten.includes(tower.id) || !within(unit, tower)) return;
+					unit.eat = sprout ? Math.floor(def.hold[L] * 3 / 2) : def.hold[L];
 					unit.eatFrom = tower.id;
 					unit.eaten.push(tower.id);
 					tower.busy += 1;
-					if (record) effects.push({ tick, type: "lure", tower: tower.id, unit: unit.id });
+					if (record) effects.push({ tick, type: "lure", tower: tower.id, unit: unit.id, style: scent ? "scent" : sprout ? "sprout" : "carrot" });
 				});
 			}
 		});
@@ -345,9 +444,9 @@ export function simulateNight({ night, towers, basket }, { record = false } = {}
 				unit.eat -= 1;
 				if (unit.eat === 0) {
 					const carrot = releaseCarrot(unit);
-					if (carrot?.trap && !unit.def.burrow) {
+					if (carrot?.has("trap") && !unit.def.burrow) {
 						unit.d = Math.max(0, unit.d - (unit.def.boss ? 500 : 1000));
-						if (record) effects.push({ tick, type: "push", tower: carrot.id, unit: unit.id });
+						if (record) effects.push({ tick, type: "trap", tower: carrot.id, unit: unit.id });
 					}
 				}
 				continue;
@@ -368,7 +467,8 @@ export function simulateNight({ night, towers, basket }, { record = false } = {}
 		if (record) {
 			frames.push(units.filter((unit) => unit.status === "walk").map((unit) => {
 				const [x, y] = pathPoint(unit.lane, unit.d);
-				const flag = unit.eat > 0 ? 1 : unit.stun > 0 ? 2 : 0;
+				const flag = (unit.eat > 0 ? FLAG_EATING : 0) | (unit.stun > 0 ? FLAG_DAZED : 0) |
+					(unit.slow > 0 ? FLAG_SLOW : 0) | (unit.drowsy ? FLAG_DROWSY : 0);
 				return [unit.id, x, y, Math.max(0, Math.round(unit.hp * 100 / unit.maxHp)), flag];
 			}));
 		}

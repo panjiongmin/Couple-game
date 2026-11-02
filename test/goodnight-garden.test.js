@@ -141,6 +141,52 @@ test("守住第 5 夜就通关", () => {
 	assert.equal(state.night, 1);
 });
 
+test("水滴和草团要飞一会儿才落地", () => {
+	const towers = [
+		{ id: 1, kind: "sprinkler", x: 2, y: 2, level: 1, spent: 0 },
+		{ id: 2, kind: "scarecrow", x: 2, y: 5, level: 1, spent: 0 },
+	];
+	const { effects } = simulateNight({ night: 1, towers, basket: BASKET }, { record: true });
+	const shots = effects.filter((effect) => effect.type === "shot");
+	assert.ok(shots.some((shot) => shot.style === "drop") && shots.some((shot) => shot.style === "straw"));
+	shots.forEach((shot) => assert.ok(shot.arrive > shot.tick));
+	const firstDrop = shots.find((shot) => shot.style === "drop");
+	assert.ok(effects.some((effect) => effect.type === "hit" && effect.tick === firstDrop.arrive && effect.unit === firstDrop.unit));
+});
+
+test("九种组合都能被触发", () => {
+	const plants = ["sunflower", "daisy", "carrot"];
+	const devices = ["scarecrow", "sprinkler", "windmill"];
+	const found = new Set();
+	plants.forEach((plant) => devices.forEach((device) => {
+		const combos = comboMap([{ id: 1, kind: plant, x: 2, y: 2 }, { id: 2, kind: device, x: 2, y: 3 }]);
+		combos.get(1).forEach((id) => found.add(id));
+	}));
+	assert.equal(found.size, 9);
+});
+
+test("花露水让淋到的小偷持续犯困，香味飘远连小猴子也能引过来", () => {
+	const base = (night, towers) => simulateNight({ night, towers, basket: BASKET }, { record: true });
+	const dew = base(1, [
+		{ id: 1, kind: "sprinkler", x: 2, y: 2, level: 1, spent: 0 },
+		{ id: 2, kind: "daisy", x: 8, y: 12, level: 1, spent: 0 },
+	]);
+	const dewCombo = base(1, [
+		{ id: 1, kind: "sprinkler", x: 2, y: 2, level: 1, spent: 0 },
+		{ id: 2, kind: "daisy", x: 2, y: 3, level: 1, spent: 0 },
+	]);
+	assert.ok(dewCombo.effects.some((effect) => effect.type === "shot" && effect.style === "dew"));
+	assert.ok(dewCombo.slept.pig + dewCombo.slept.mouse >= dew.slept.pig + dew.slept.mouse);
+
+	const lured = (towers) => base(2, towers).effects.filter((effect) => effect.type === "lure")
+		.some((effect) => base(2, towers).units[effect.unit].kind === "monkey");
+	assert.equal(lured([{ id: 1, kind: "carrot", x: 2, y: 9, level: 1, spent: 0 }]), false);
+	assert.equal(lured([
+		{ id: 1, kind: "carrot", x: 2, y: 9, level: 1, spent: 0 },
+		{ id: 2, kind: "windmill", x: 3, y: 9, level: 1, spent: 0 },
+	]), true);
+});
+
 test("对方没来时不能操作，但可以发表情", () => {
 	const state = createState();
 	const result = applyAction(state, { type: "build", kind: "sunflower", x: 4, y: 3 }, ctx(0, { playerCount: 1 }));
