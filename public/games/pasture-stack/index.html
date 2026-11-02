@@ -8,25 +8,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700&display=swap">
 <style>
-/* 布局：单列牧场舞台——房间条与回合提示在上，叠牌区居中，盲牌堆、暂存区和共用木质卡槽贴近底部 */
+/* 布局：单列牧场舞台——房间条与两位玩家在上，叠牌区居中，盲牌堆、暂存区和共用的粉色果篮卡槽贴近底部 */
 :root {
-	--meadow: #c4e3a3;
-	--meadow-dot: #b2d78d;
-	--ink: #33402a;
-	--muted: #5e6f4e;
-	--tile-face: #fbfdf3;
-	--tile-edge: #d7e5c2;
-	--tile-side: #5c9a3c;
-	--tile-back: #8fc46c;
-	--shade: rgba(36, 46, 28, 0.52);
-	--tray: #a06c3b;
-	--tray-in: #7c5129;
-	--cell: rgba(255, 244, 222, 0.16);
-	--sky: #2e83c6;
-	--sky-deep: #1f659f;
-	--sun: #f2b84b;
-	--danger: #c8553d;
-	--panel: #fdfef8;
+	--cream: #fff8f0;
+	--ink: #4a3a33;
+	--muted: #8a7568;
+	--line: #f3e3d6;
+	--tile-face: #fffdf8;
+	--tile-edge: #f1dfcf;
+	--tile-side: #f2c3b0;
+	--shade: rgba(84, 64, 96, 0.46);
+	--pink: #ff9db7;
+	--pink-deep: #d94875;
+	--pink-soft: #ffe5ec;
+	--mint: #7adcc4;
+	--mint-soft: #ddf5ee;
+	--lav: #b6a2f4;
+	--lav-deep: #6647b8;
+	--lav-soft: #e8e1ff;
+	--butter-soft: #fff1c7;
+	--panel: #ffffff;
 	--font-display: "ZCOOL KuaiLe", "PingFang SC", "Microsoft YaHei", sans-serif;
 	--font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
 	--font-tile: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
@@ -40,10 +41,13 @@ html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 
 body {
 	margin: 0;
+	min-height: 100vh;
 	background:
-		radial-gradient(circle at 20% 30%, var(--meadow-dot) 0 2px, transparent 3px) 0 0 / 46px 46px,
-		radial-gradient(circle at 70% 75%, var(--meadow-dot) 0 1.5px, transparent 2.5px) 0 0 / 38px 38px,
-		var(--meadow);
+		radial-gradient(42vmax 42vmax at 0% 0%, rgba(255, 229, 236, 0.95), transparent 70%),
+		radial-gradient(36vmax 36vmax at 100% 25%, rgba(221, 245, 238, 0.95), transparent 70%),
+		radial-gradient(44vmax 40vmax at 30% 105%, rgba(232, 225, 255, 0.9), transparent 70%),
+		var(--cream);
+	background-attachment: fixed;
 	color: var(--ink);
 	font-family: var(--font-body);
 	font-size: 14px;
@@ -54,6 +58,8 @@ body {
 
 .wrap { max-width: 520px; margin: 0 auto; }
 
+.ico { display: block; width: 100%; height: 100%; }
+
 .stage {
 	--t: 48px;
 	position: relative;
@@ -61,7 +67,8 @@ body {
 	flex-direction: column;
 	align-items: center;
 	gap: calc(var(--t) * 0.2);
-	width: calc(var(--t) * 7.66);
+	/* 牌面按 --t 缩放；屏幕矮时牌会变小，但标题、玩家和道具这几行至少保留 340px 宽 */
+	width: max(calc(var(--t) * 7.66), min(100%, 340px));
 	max-width: 100%;
 	margin: 0 auto;
 }
@@ -74,6 +81,9 @@ body {
 	width: 100%;
 }
 
+.title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.title > .ico { flex: none; width: 40px; height: 40px; }
+
 .bar h1 {
 	margin: 0;
 	font-family: var(--font-display);
@@ -83,7 +93,7 @@ body {
 	letter-spacing: 0.04em;
 }
 
-.bar h1 a { color: inherit; text-decoration: none; }
+.bar h1 a { color: inherit; text-decoration: none; white-space: nowrap; }
 
 .meta {
 	display: flex;
@@ -93,7 +103,7 @@ body {
 	font-variant-numeric: tabular-nums;
 }
 
-.meta b { color: var(--ink); }
+.meta b { color: var(--pink-deep); }
 
 .room {
 	display: flex;
@@ -123,72 +133,109 @@ body {
 	align-items: center;
 	gap: 6px;
 	min-width: 0;
-	padding: 6px 10px;
+	padding: 3px 10px 3px 3px;
 	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.45);
+	background: rgba(255, 255, 255, 0.6);
 	border: 2px solid transparent;
 	font-size: 0.85rem;
+	transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
-.player:last-child { justify-content: flex-end; }
+.player:last-child { flex-direction: row-reverse; padding: 3px 3px 3px 10px; }
 .player .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.player.turn { border-color: var(--sun); background: var(--panel); box-shadow: 0 3px 0 rgba(242, 184, 75, 0.55); }
+.player.turn { border-color: var(--pink); background: var(--panel); box-shadow: 0 6px 16px rgba(217, 72, 117, 0.18); }
 .player.offline { opacity: 0.55; }
+.player.offline .avatar .ico { filter: grayscale(1); }
+
+.avatar {
+	position: relative;
+	flex: none;
+	width: 34px;
+	height: 34px;
+	padding: 3px;
+	border-radius: 50%;
+	background: var(--pink-soft);
+}
+
+#player-1 .avatar { background: var(--butter-soft); }
+.player.turn .avatar .ico { animation: hop 1.4s ease-in-out infinite; }
+
+@keyframes hop {
+	0%, 60%, 100% { transform: translateY(0); }
+	30% { transform: translateY(-4px); }
+}
 
 .dot {
-	flex: none;
-	width: 8px;
-	height: 8px;
+	position: absolute;
+	right: -1px;
+	bottom: -1px;
+	width: 10px;
+	height: 10px;
 	border-radius: 50%;
-	background: var(--tile-side);
+	border: 2px solid #fff;
+	background: var(--mint);
 }
 
-.player.offline .dot { background: #9aa58e; }
+.player.offline .dot, .player.empty .dot { background: #cdbfb6; }
+.player.empty .avatar .ico { opacity: 0.35; }
 
 .turn-banner {
 	font-family: var(--font-display);
 	font-size: 1.05rem;
+	color: var(--muted);
 	white-space: nowrap;
 }
 
-.turn-banner.mine { color: var(--sky-deep); }
+.turn-banner.mine { color: var(--pink-deep); }
 
 .btn {
 	font-family: var(--font-display);
 	font-size: 1rem;
 	border: 0;
 	border-radius: 999px;
-	padding: 8px 16px;
+	padding: 8px 18px;
 	color: #fff;
-	background: var(--sky);
-	box-shadow: 0 4px 0 var(--sky-deep);
+	background: linear-gradient(180deg, #e8638d, var(--pink-deep));
+	box-shadow: 0 4px 0 #b9375f, 0 10px 20px rgba(217, 72, 117, 0.2);
 	cursor: pointer;
 	white-space: nowrap;
 }
 
-.btn.small { font-size: 0.85rem; padding: 5px 12px; box-shadow: 0 3px 0 var(--sky-deep); }
-.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--sky-deep); }
-.btn:disabled { background: #9bb38a; box-shadow: 0 4px 0 #7f9870; cursor: not-allowed; }
-.btn.ghost { background: var(--panel); color: var(--ink); box-shadow: 0 4px 0 #b8c9a4; }
+.btn.small {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.85rem;
+	padding: 3px 12px 3px 4px;
+	color: var(--lav-deep);
+	background: var(--panel);
+	box-shadow: 0 3px 0 #d9cff9, 0 6px 14px rgba(102, 71, 184, 0.12);
+}
+
+.btn.small .ico { width: 24px; height: 24px; }
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #b9375f; }
+.btn.small:active { box-shadow: 0 1px 0 #d9cff9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.ghost { background: var(--panel); color: var(--ink); box-shadow: 0 4px 0 var(--line), 0 10px 20px rgba(170, 110, 90, 0.1); }
 
 .btn:focus-visible, .tile:focus-visible, input:focus-visible {
-	outline: 3px solid var(--sky);
+	outline: 3px solid var(--lav);
 	outline-offset: 2px;
 }
 
 .board, .piles, .buffer, .slot { position: relative; flex: none; }
 
 .board { width: calc(var(--t) * 7); height: calc(var(--t) * 8); }
-.board.waiting { filter: saturate(0.7); }
+.board.waiting { filter: saturate(0.6); }
 
 .piles { width: calc(var(--t) * 7); height: calc(var(--t) * 1.15); }
 
 .buffer {
 	width: calc(var(--t) * 7);
 	height: calc(var(--t) * 1.12);
-	border-radius: calc(var(--t) * 0.2);
-	background: rgba(255, 255, 255, 0.18);
-	outline: 2px dashed rgba(92, 154, 60, 0.45);
+	border-radius: calc(var(--t) * 0.26);
+	background: rgba(255, 255, 255, 0.45);
+	outline: 2px dashed #cbbef5;
 	outline-offset: -2px;
 }
 
@@ -207,20 +254,22 @@ body {
 .slot {
 	width: calc(var(--t) * 7.66);
 	height: calc(var(--t) * 1.42);
-	border-radius: calc(var(--t) * 0.22);
-	background: var(--tray);
-	box-shadow: inset 0 0 0 4px var(--tray-in), 0 6px 0 var(--tray-in);
+	border-radius: calc(var(--t) * 0.32);
+	background: linear-gradient(180deg, #fff0f4, #ffe1ea);
+	box-shadow: inset 0 0 0 3px #ffc4d4, 0 5px 0 #f6b3c6, 0 14px 26px rgba(217, 72, 117, 0.16);
+	transition: box-shadow 0.2s;
 }
 
-.slot.full { box-shadow: inset 0 0 0 4px var(--danger), 0 6px 0 var(--tray-in); }
+.slot.full { box-shadow: inset 0 0 0 3px var(--pink-deep), 0 5px 0 #f6b3c6, 0 14px 26px rgba(217, 72, 117, 0.28); }
 
 .cell {
 	position: absolute;
 	top: calc(var(--t) * 0.15);
 	width: var(--t);
 	height: var(--t);
-	border-radius: calc(var(--t) * 0.16);
-	background: var(--cell);
+	border-radius: calc(var(--t) * 0.22);
+	background: rgba(255, 255, 255, 0.75);
+	box-shadow: inset 0 2px 4px rgba(217, 72, 117, 0.1);
 }
 
 .tile {
@@ -230,12 +279,12 @@ body {
 	padding: 0;
 	display: grid;
 	place-items: center;
-	border-radius: calc(var(--t) * 0.16);
+	border-radius: calc(var(--t) * 0.22);
 	border: 1.5px solid var(--tile-edge);
 	background: var(--tile-face);
 	box-shadow:
-		0 calc(var(--t) * 0.09) 0 var(--tile-side),
-		0 calc(var(--t) * 0.13) calc(var(--t) * 0.12) rgba(40, 60, 20, 0.28);
+		0 calc(var(--t) * 0.08) 0 var(--tile-side),
+		0 calc(var(--t) * 0.14) calc(var(--t) * 0.16) rgba(150, 90, 70, 0.22);
 	font-family: var(--font-tile);
 	font-size: calc(var(--t) * 0.6);
 	line-height: 1;
@@ -245,7 +294,8 @@ body {
 	-webkit-tap-highlight-color: transparent;
 }
 
-.tile:not(:disabled):hover { filter: brightness(1.06); }
+.tile .ico { width: 80%; height: 80%; pointer-events: none; }
+.tile:not(:disabled):hover { filter: brightness(1.04); }
 .tile:disabled { cursor: default; }
 
 .tile.covered::after {
@@ -259,15 +309,17 @@ body {
 .tile.back {
 	font-size: 0;
 	background:
-		repeating-linear-gradient(45deg, transparent 0 6px, rgba(255, 255, 255, 0.18) 6px 9px),
-		var(--tile-back);
-	border-color: var(--tile-side);
+		radial-gradient(circle, rgba(255, 255, 255, 0.7) 0 1.5px, transparent 2.5px) 0 0 / 9px 9px,
+		var(--lav);
+	border-color: #a48ff0;
+	box-shadow: 0 calc(var(--t) * 0.08) 0 #8f78e0, 0 calc(var(--t) * 0.14) calc(var(--t) * 0.16) rgba(102, 71, 184, 0.22);
 }
 
-.tile.back.covered::after { background: rgba(36, 46, 28, 0.28); }
+.tile.back.covered::after { background: rgba(84, 64, 96, 0.22); }
 .tile.clearing { animation: pop 0.2s ease-in 0.2s forwards; }
 
 @keyframes pop {
+	40% { transform: scale(1.15); }
 	to { transform: scale(0.15); opacity: 0; }
 }
 
@@ -276,26 +328,40 @@ body {
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 10px;
 	width: 100%;
-	margin-top: 4px;
+	margin-top: 6px;
 }
 
-.props .btn {
-	display: flex;
-	flex-direction: column;
+.prop {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-rows: auto auto;
+	column-gap: 6px;
 	align-items: center;
-	gap: 2px;
-	padding: 8px 6px 7px;
-	border-radius: 14px;
+	padding: 6px 10px 6px 6px;
+	border: 0;
+	border-radius: 18px;
+	background: var(--panel);
+	color: var(--ink);
+	box-shadow: 0 4px 0 var(--line), 0 10px 20px rgba(170, 110, 90, 0.1);
+	font-family: var(--font-display);
+	font-size: 1rem;
+	text-align: left;
+	cursor: pointer;
 }
 
-.props .btn small { font-family: var(--font-body); font-size: 0.7rem; opacity: 0.9; }
+.prop .ico { grid-row: span 2; width: 38px; height: 38px; }
+.prop small { font-family: var(--font-body); font-size: 0.7rem; color: var(--muted); }
+.prop:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.prop:disabled { opacity: 0.5; cursor: not-allowed; }
+.prop:disabled .ico { filter: grayscale(0.7); }
+.prop:focus-visible { outline: 3px solid var(--lav); outline-offset: 2px; }
 
 .note {
 	margin: 2px 0 0;
 	max-width: 36em;
 	color: var(--muted);
 	font-size: 0.78rem;
-	line-height: 1.6;
+	line-height: 1.7;
 	text-align: center;
 	text-wrap: balance;
 }
@@ -306,12 +372,12 @@ body {
 	bottom: calc(24px + env(safe-area-inset-bottom, 0px));
 	transform: translateX(-50%);
 	z-index: 2000;
-	padding: 10px 16px;
-	border-radius: 12px;
-	background: var(--ink);
+	padding: 10px 18px;
+	border-radius: 999px;
+	background: rgba(74, 58, 51, 0.92);
 	color: #fff;
 	font-size: 0.85rem;
-	box-shadow: 0 6px 20px rgba(30, 40, 20, 0.3);
+	box-shadow: 0 8px 24px rgba(74, 58, 51, 0.25);
 }
 
 .overlay {
@@ -321,8 +387,10 @@ body {
 	display: grid;
 	place-items: center;
 	padding: 16px;
-	background: rgba(51, 64, 42, 0.42);
-	border-radius: 18px;
+	background: rgba(255, 248, 240, 0.55);
+	-webkit-backdrop-filter: blur(4px);
+	backdrop-filter: blur(4px);
+	border-radius: 24px;
 }
 
 .panel {
@@ -332,10 +400,28 @@ body {
 	gap: 12px;
 	width: min(320px, 100%);
 	padding: 22px 20px 20px;
-	border-radius: 18px;
+	border-radius: 28px;
 	background: var(--panel);
-	box-shadow: 0 8px 0 #b8c9a4, 0 18px 40px rgba(30, 40, 20, 0.3);
+	border: 1px solid var(--line);
+	box-shadow: 0 18px 44px rgba(150, 90, 70, 0.22);
 	text-align: center;
+}
+
+.panel-icon {
+	width: 76px;
+	height: 76px;
+	padding: 8px;
+	margin-top: -4px;
+	border-radius: 50%;
+	background: var(--mint-soft);
+	animation: float 3s ease-in-out infinite;
+}
+
+.panel-icon.bare { padding: 0; background: none; }
+
+@keyframes float {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-5px); }
 }
 
 .panel h2 {
@@ -346,7 +432,7 @@ body {
 	text-wrap: balance;
 }
 
-.panel p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+.panel p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.7; text-wrap: pretty; }
 
 .panel .actions {
 	display: flex;
@@ -358,9 +444,9 @@ body {
 
 .panel input {
 	width: 100%;
-	padding: 10px 12px;
-	border-radius: 10px;
-	border: 2px solid var(--tile-edge);
+	padding: 10px 14px;
+	border-radius: 999px;
+	border: 2px solid var(--line);
 	background: #fff;
 	color: var(--ink);
 	font: inherit;
@@ -368,11 +454,14 @@ body {
 	text-align: center;
 }
 
+.panel input:focus { border-color: var(--pink); outline: none; }
+
 .invite-link {
 	width: 100%;
-	padding: 8px 10px;
-	border-radius: 10px;
-	background: rgba(196, 227, 163, 0.35);
+	padding: 8px 12px;
+	border-radius: 14px;
+	background: var(--lav-soft);
+	color: var(--lav-deep);
 	font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 	font-size: 0.78rem;
 	word-break: break-all;
@@ -381,6 +470,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
 	.tile.clearing { animation: none; opacity: 0; }
+	.player.turn .avatar .ico, .panel-icon { animation: none; }
 }
 </style>
 </head>
@@ -388,23 +478,32 @@ body {
 <div class="wrap">
 	<div class="stage" id="stage">
 		<header class="bar">
-			<div>
-				<h1><a href="/">牧场叠叠消</a></h1>
-				<div class="meta">
-					<span id="level-label">第 1 关</span>
-					<span>剩余 <b id="remain">0</b> 张</span>
+			<div class="title">
+				<svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#sheep"/></svg>
+				<div>
+					<h1><a href="/">牧场叠叠消</a></h1>
+					<div class="meta">
+						<span id="level-label">第 1 关</span>
+						<span>剩余 <b id="remain">0</b> 张</span>
+					</div>
 				</div>
 			</div>
 			<div class="room">
 				<span>房间 <code id="room-code">------</code></span>
-				<button class="btn small" id="btn-invite" type="button">邀请</button>
+				<button class="btn small" id="btn-invite" type="button"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#invite"/></svg>邀请</button>
 			</div>
 		</header>
 
 		<div class="players" id="players" aria-live="polite">
-			<div class="player" id="player-0"><span class="dot"></span><span class="name">等待加入</span></div>
+			<div class="player empty" id="player-0">
+				<span class="avatar"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#rabbit"/></svg><i class="dot"></i></span>
+				<span class="name">等待加入</span>
+			</div>
 			<div class="turn-banner" id="turn-banner">连接中…</div>
-			<div class="player" id="player-1"><span class="name">等待加入</span><span class="dot"></span></div>
+			<div class="player empty" id="player-1">
+				<span class="avatar"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#cat"/></svg><i class="dot"></i></span>
+				<span class="name">等待加入</span>
+			</div>
 		</div>
 
 		<div class="board" id="board" aria-label="叠牌区"></div>
@@ -413,15 +512,16 @@ body {
 		<div class="slot" id="slot" aria-label="共用卡槽，共 7 格"></div>
 
 		<div class="props">
-			<button class="btn" id="btn-out" type="button" title="把卡槽最左边的 3 张牌移到暂存区">移出<small id="out-count">剩 1 次</small></button>
-			<button class="btn" id="btn-undo" type="button" title="把上一张放进卡槽的牌退回原位，由拿它的人重新走">撤回<small id="undo-count">剩 1 次</small></button>
-			<button class="btn" id="btn-shuffle" type="button" title="把场上剩余的牌重新随机分配图案">洗牌<small id="shuffle-count">剩 1 次</small></button>
+			<button class="prop" id="btn-out" type="button" title="把卡槽最左边的 3 张牌移到暂存区"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#move-out"/></svg>移出<small id="out-count">剩 1 次</small></button>
+			<button class="prop" id="btn-undo" type="button" title="把上一张放进卡槽的牌退回原位，由拿它的人重新走"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#undo"/></svg>撤回<small id="undo-count">剩 1 次</small></button>
+			<button class="prop" id="btn-shuffle" type="button" title="把场上剩余的牌重新随机分配图案"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#shuffle"/></svg>洗牌<small id="shuffle-count">剩 1 次</small></button>
 		</div>
 
 		<p class="note">两人共用一个卡槽，轮流各拿一张：点亮的牌才能拿，凑齐 3 张相同的自动消除，卡槽满了一起输。牌局随机生成，不保证有解。移出、撤回、洗牌、复活两人共享，每局各 1 次，只有轮到的人能用移出、撤回、洗牌。</p>
 
 		<div class="overlay" id="overlay" hidden>
 			<div class="panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+				<div class="panel-icon" id="dialog-icon" aria-hidden="true"></div>
 				<h2 id="dialog-title"></h2>
 				<p id="dialog-text"></p>
 				<div class="invite-link" id="dialog-link" hidden></div>
@@ -438,8 +538,14 @@ body {
 <script type="module">
 import { meta, isFree, remaining, SLOT_SIZE, BUFFER_MAX } from "./logic.js";
 import { connectRoom, createRoom, getName, setName, inviteUrl, copyText, normalizeCode } from "/shared/room-client.js";
+import { icon, isIconName } from "/shared/icons.js";
 
 const PILE_STEP = 0.13;
+const TILE_NAMES = {
+	carrot: "胡萝卜", corn: "玉米", cabbage: "白菜", mushroom: "香菇", eggplant: "茄子", broccoli: "西兰花",
+	watermelon: "西瓜", strawberry: "草莓", grape: "葡萄", banana: "香蕉", blueberry: "蓝莓", peach: "桃子",
+	pineapple: "菠萝", cherry: "樱桃", dragonfruit: "火龙果", avocado: "牛油果",
+};
 const $ = (selector) => document.querySelector(selector);
 const stage = $("#stage");
 const boardEl = $("#board");
@@ -490,7 +596,10 @@ function tileButton(tile, x, y, z, { covered = false, back = false } = {}) {
 	button.style.left = `${x}px`;
 	button.style.top = `${y}px`;
 	button.style.zIndex = String(z);
-	button.textContent = back ? "" : tile.type;
+	if (back) button.textContent = "";
+	else if (isIconName(tile.type)) button.replaceChildren(icon(tile.type));
+	else button.textContent = tile.type;
+	if (!back) button.setAttribute("aria-label", TILE_NAMES[tile.type] || tile.type);
 	button.disabled = covered || tile.where === "slot" || !myTurn();
 	if (back) button.setAttribute("aria-label", "背面朝上的牌");
 	return button;
@@ -581,6 +690,7 @@ function renderPlayers() {
 		const player = view?.room.players.find((item) => item.seat === seat);
 		el.querySelector(".name").textContent = player ? playerLabel(seat) + (player.online ? "" : " · 离线") : "等待加入";
 		el.classList.toggle("offline", !!player && !player.online);
+		el.classList.toggle("empty", !player);
 		el.classList.toggle("turn", !!player && shown.status === "play" && shown.turn === seat && playerCount() >= meta.minPlayers);
 	});
 	const banner = $("#turn-banner");
@@ -607,8 +717,17 @@ function renderProps() {
 	setProp("#btn-shuffle", "#shuffle-count", S.props.shuffle, S.tiles.some((tile) => tile.where === "board" || tile.where === "pile"));
 }
 
-function showDialog({ title, text, link = "", actions = [], nameForm = false }) {
+// 自带圆底的界面图标不再套一层底色
+const BARE_ICONS = new Set(["invite", "heart", "confetti", "flower", "sprout"]);
+
+function showDialog({ title, text, iconName = "sheep", link = "", actions = [], nameForm = false }) {
 	overlay.hidden = false;
+	const iconEl = $("#dialog-icon");
+	if (iconEl.dataset.icon !== iconName) {
+		iconEl.dataset.icon = iconName;
+		iconEl.replaceChildren(icon(iconName));
+	}
+	iconEl.classList.toggle("bare", BARE_ICONS.has(iconName));
 	$("#dialog-title").textContent = title;
 	$("#dialog-text").textContent = text;
 	$("#dialog-link").hidden = !link;
@@ -635,6 +754,7 @@ function renderOverlay() {
 	if (playerCount() < meta.minPlayers) {
 		showDialog({
 			title: "等另一位玩家",
+			iconName: "invite",
 			text: `把下面的链接发给对方，对方打开后就能开始。房间码 ${roomCode}`,
 			link,
 			actions: [["复制邀请链接", () => copyInvite(), false]],
@@ -644,6 +764,7 @@ function renderOverlay() {
 	if (S.status === "fail") {
 		showDialog({
 			title: "卡槽满了",
+			iconName: S.props.revive ? "heart" : "sheep",
 			text: S.props.revive
 				? `还剩 ${remaining(S)} 张牌。复活会把卡槽最左边的 3 张移到暂存区，两人谁点都行。`
 				: `还剩 ${remaining(S)} 张牌，复活机会已经用掉了。`,
@@ -657,6 +778,7 @@ function renderOverlay() {
 	if (S.status === "win" && S.level === 1) {
 		showDialog({
 			title: "第 1 关完成",
+			iconName: "flower",
 			text: "第 2 关有 14 种图案、8 层牌，还有两堆只能看到顶牌的盲牌。道具次数会重置。",
 			actions: [["进入第 2 关", () => send({ type: "nextLevel" }), false]],
 		});
@@ -665,6 +787,7 @@ function renderOverlay() {
 	if (S.status === "win") {
 		showDialog({
 			title: "一起通关了",
+			iconName: "confetti",
 			text: "随机牌局不保证有解，两个人能清空整个牧场并不常见。",
 			actions: [
 				["再来一局", () => send({ type: "playAgain", level: 2 }), false],
@@ -714,7 +837,7 @@ function applyServerMessage(message) {
 function fit() {
 	const width = document.querySelector(".wrap").clientWidth;
 	const byWidth = Math.floor(width / 7.8);
-	const byHeight = Math.floor((window.innerHeight - 270) / 11.6);
+	const byHeight = Math.floor((window.innerHeight - 300) / 11.6);
 	T = Math.max(30, Math.min(58, byWidth, byHeight));
 }
 
@@ -738,6 +861,7 @@ function connect(name) {
 function askName() {
 	showDialog({
 		title: "先起个昵称",
+		iconName: "sprout",
 		text: "对方会在牌桌上看到这个名字。",
 		nameForm: true,
 		actions: [["进入房间", () => $("#name-form").requestSubmit(), false]],

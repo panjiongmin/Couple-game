@@ -49,6 +49,8 @@ public/
   index.html       首页：游戏列表、按房间码加入
   shared/
     room-client.js 前端通用房间客户端：玩家身份、建房、连接与重连、邀请链接
+    icons.svg      图标 sprite（牌面果蔬、小动物、界面图标），用 <use href="/shared/icons.svg#名字"> 引用
+    icons.js       icon(name) 生成图标元素
   games/
     pasture-stack/
       logic.js     纯规则模块，服务端和前端共用
@@ -70,6 +72,20 @@ test/
 - 房间使用 WebSocket Hibernation：没人操作时房间会休眠，不产生持续计费。心跳 `ping` 由运行时直接回 `pong`，不会唤醒房间。
 - 房间闲置 7 天后自动清理。
 
+## 图标
+
+界面是奶油底色加粉、薄荷、薰衣草、奶黄四种柔和色，图标来自 [iconfont](https://www.iconfont.cn/)，版权归原作者所有：
+
+| 用途 | 合集 | 作者 |
+|---|---|---|
+| 牌面果蔬 | [水果铺子](https://www.iconfont.cn/collections/detail?cid=51141)、[蔬菜超市](https://www.iconfont.cn/collections/detail?cid=51142) | 阿狸的信燕 |
+| 小羊、小兔、小猫 | [彩色动物club](https://www.iconfont.cn/collections/detail?cid=50174) | 芝芝桃桃和丸子 |
+| 爱心、邀请、礼花、花朵、新芽 | [可爱生活彩色线性图标](https://www.iconfont.cn/collections/detail?cid=54346) | 黑洛视觉 |
+
+合并进 sprite 时把描边从纯黑统一换成暖棕 `#4A3A33`。移出、撤回、洗牌三个道具图标在 iconfont 上没找到同风格的，按《可爱生活彩色线性图标》的画法（浅色圆底、右上角圆点、圆头描边）补画。
+
+新游戏可以直接引用 sprite 里已有的图标；要加新图标，把 SVG 的内容包成 `<symbol id="名字" viewBox="...">` 追加到 `icons.svg`。
+
 ## 添加一个新游戏
 
 1. 新建 `public/games/<id>/logic.js`，导出：
@@ -77,7 +93,7 @@ test/
    - `createState()`：返回新一局的初始状态（必须能被 JSON 序列化）
    - `applyAction(state, action, { seat, playerCount })`：不能修改传入的 `state`；成功返回 `{ state, event }`，失败返回 `{ error }`。回合检查也写在这里。
 2. 在 `src/games.js` 里登记这个模块。
-3. 新建 `public/games/<id>/index.html`，用 `/shared/room-client.js` 的 `connectRoom()` 连接房间、发送操作、渲染状态。
+3. 新建 `public/games/<id>/index.html`，用 `/shared/room-client.js` 的 `connectRoom()` 连接房间、发送操作、渲染状态。`meta.icon` 写 sprite 里的图标名，首页卡片会显示它。
 4. 在 `test/` 下给规则写单元测试。
 
 首页的游戏列表来自 `/api/games`，登记后会自动出现。

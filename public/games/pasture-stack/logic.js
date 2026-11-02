@@ -7,12 +7,16 @@ export const meta = {
 	name: "牧场叠叠消",
 	summary: "两人共用一个牌局和一个 7 格卡槽，轮流各拿一张，一起清空牧场。",
 	tags: ["双人合作", "回合制", "叠牌三消"],
-	icon: "🐑",
+	icon: "sheep",
 	minPlayers: 2,
 	maxPlayers: 2,
 };
 
-export const TYPES = ["🥕", "🌽", "🥬", "🍄", "🌾", "🧶", "🪣", "🔥", "🌰", "🍎", "🥚", "🌻", "🪵", "🧤", "🍐", "🥛"];
+// 牌面图案，对应 /shared/icons.svg 里的图标。
+export const TYPES = [
+	"carrot", "corn", "cabbage", "mushroom", "eggplant", "broccoli", "watermelon", "strawberry",
+	"grape", "banana", "blueberry", "peach", "pineapple", "cherry", "dragonfruit", "avocado",
+];
 export const SLOT_SIZE = 7;
 export const BUFFER_MAX = 6;
 export const PILE_SIZE = 10;
