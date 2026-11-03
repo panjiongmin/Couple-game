@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>晚安小菜园</title>
+<meta name="theme-color" content="#fff8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="晚安小菜园">
+<link rel="apple-touch-icon" href="/shared/app-icon-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700&display=swap">
@@ -40,7 +47,13 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
-html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* iPhone：禁止双击放大和下拉回弹，长按不弹出复制菜单；顶部让出灵动岛，底部操作栏让出 Home 指示条 */
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+	touch-action: manipulation;
+	overscroll-behavior: none;
+}
 
 body {
 	margin: 0;
@@ -54,11 +67,19 @@ body {
 	color: var(--ink);
 	font-family: var(--font-body);
 	font-size: 14px;
-	padding-left: max(16px, env(safe-area-inset-left, 0px));
-	padding-right: max(16px, env(safe-area-inset-right, 0px));
-	padding-block: 10px 24px;
+	padding-left: max(12px, env(safe-area-inset-left, 0px));
+	padding-right: max(12px, env(safe-area-inset-right, 0px));
+	padding-top: max(8px, env(safe-area-inset-top, 0px));
+	padding-bottom: calc(var(--dock-h, 150px) + 8px);
+	overscroll-behavior: none;
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent;
 	transition: background-color 0.6s;
 }
+
+input { -webkit-user-select: text; user-select: text; }
 
 body.is-night { background-color: #ece8fb; }
 
@@ -70,11 +91,29 @@ body.is-night { background-color: #ece8fb; }
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	width: 100%;
-	max-width: 440px;
+	max-width: 460px;
 	margin: 0 auto;
 }
+
+.bar-actions { display: flex; align-items: center; gap: 6px; }
+
+.icon-btn {
+	display: grid;
+	grid-auto-flow: column;
+	place-content: center;
+	gap: 3px;
+	width: 36px;
+	height: 36px;
+	border: 0;
+	border-radius: 50%;
+	background: var(--panel);
+	box-shadow: 0 3px 0 var(--line), 0 6px 14px rgba(170, 110, 90, 0.12);
+	cursor: pointer;
+}
+
+.icon-btn i { width: 4px; height: 4px; border-radius: 50%; background: var(--ink); }
 
 .bar {
 	display: flex;
@@ -521,6 +560,61 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .fx-ring.warm { border-color: rgba(255, 196, 120, 0.95); background: radial-gradient(circle, transparent 55%, rgba(255, 170, 90, 0.35)); }
 .leaf { width: 9px; height: 5px; margin: -2px 0 0 -4px; border-radius: 50% 0; background: #9bd77a; z-index: 5; }
 .leaf.warm { background: #ffb36b; }
+.proj.honey {
+	width: 15px;
+	height: 13px;
+	margin: -7px 0 0 -7px;
+	border-radius: 50% 50% 45% 45%;
+	background: radial-gradient(circle at 35% 30%, #fff3c4 0 15%, #ffc94a 40%, #e8962c);
+	box-shadow: 0 0 0 1.5px #fff, 0 2px 6px rgba(160, 100, 20, 0.4);
+}
+.proj.spike {
+	width: 15px;
+	height: 15px;
+	margin: -7px 0 0 -7px;
+	border-radius: 50%;
+	background: radial-gradient(circle at 35% 35%, #c9ec9a, #6fb04b);
+	box-shadow: 0 0 0 1.5px #fff, 0 0 0 3px rgba(111, 176, 75, 0.45), 0 3px 6px rgba(40, 80, 20, 0.35);
+}
+.bit.thorn { width: 3px; height: 9px; margin: -4px 0 0 -1px; border-radius: 2px; background: #6fb04b; }
+.fx-ring.needles { border-color: rgba(160, 220, 120, 0.95); background: radial-gradient(circle, transparent 55%, rgba(111, 176, 75, 0.3)); }
+.leaf.needles { width: 3px; height: 10px; border-radius: 2px; background: #6fb04b; }
+
+/* 地上的蜂蜜：一直留到黏性消失 */
+.layer.puddles { pointer-events: none; }
+.puddle {
+	position: absolute;
+	border-radius: 50%;
+	background: radial-gradient(circle at 40% 35%, rgba(255, 236, 160, 0.95), rgba(240, 180, 60, 0.85) 60%, rgba(220, 150, 40, 0.5));
+	box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+	transform: scaleY(0.7);
+	animation: spread 0.35s ease-out;
+}
+.puddle.nectar { background: radial-gradient(circle at 40% 35%, rgba(255, 220, 230, 0.95), rgba(255, 157, 183, 0.8) 60%, rgba(240, 120, 160, 0.45)); }
+.puddle.sticky { background: radial-gradient(circle, rgba(111, 176, 75, 0.9) 0 1.5px, transparent 2.5px) 0 0 / 8px 8px, radial-gradient(circle at 40% 35%, rgba(255, 236, 160, 0.95), rgba(240, 180, 60, 0.85) 60%, rgba(220, 150, 40, 0.5)); }
+.puddle.fading { opacity: 0; transition: opacity 0.6s; }
+@keyframes spread { from { transform: scaleY(0.7) scale(0.2); } }
+.unit.stuck .body { animation: wobble 0.5s ease-in-out infinite; }
+@keyframes wobble { 50% { transform: translateY(-6%) scaleX(1.06); } }
+
+.forecast .badge {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	padding: 1px 8px 1px 3px;
+	border: 0;
+	border-radius: 999px;
+	background: var(--panel);
+	color: var(--ink);
+	font: inherit;
+	font-size: 0.78rem;
+	cursor: pointer;
+	box-shadow: 0 2px 0 var(--line);
+}
+.forecast .badge .ico { width: 20px; height: 20px; }
+.forecast .badge.garden { background: var(--mint-soft); color: var(--mint-deep); }
+.forecast .badge.weather.selected { background: var(--lav-soft); color: var(--lav-deep); }
+
 .wisp { margin: -10px 0 0 -8px; font-size: 16px; color: #ff9a6b; font-weight: 700; text-shadow: 0 0 4px #fff; z-index: 5; }
 
 .fx-drop {
@@ -593,13 +687,23 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 }
 
 .dock {
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 900;
+	padding: 8px max(12px, env(safe-area-inset-left, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-right, 0px));
+	border-radius: 22px 22px 0 0;
+	background: rgba(255, 250, 244, 0.94);
+	-webkit-backdrop-filter: blur(12px);
+	backdrop-filter: blur(12px);
+	box-shadow: 0 -6px 24px rgba(150, 90, 70, 0.14);
 }
 
-.dock-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dock-inner { display: flex; flex-direction: column; gap: 8px; max-width: 460px; margin: 0 auto; }
+.dock-rows { display: flex; flex-direction: column; gap: 8px; }
+.dock-row { display: flex; align-items: center; gap: 8px; }
+.dock-row .chip { flex: none; padding: 9px 12px; }
 
 .wallet { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--muted); }
 .wallet .ico { width: 22px; height: 22px; }
@@ -619,15 +723,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.palette { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.palette { display: grid; grid-template-columns: repeat(var(--kinds, 3), minmax(0, 1fr)); gap: 6px; }
 
 .kind {
 	position: relative;
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);
-	column-gap: 6px;
+	column-gap: 5px;
 	align-items: center;
-	padding: 6px 8px 6px 6px;
+	padding: 5px 6px 5px 5px;
 	border: 0;
 	border-radius: 16px;
 	background: var(--panel);
@@ -639,7 +743,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 	touch-action: manipulation;
 }
 
-.kind .ico { grid-row: span 2; width: 34px; height: 34px; }
+.kind .ico { grid-row: span 2; width: 32px; height: 32px; }
+.kind b { white-space: nowrap; }
+.palette.four .kind { column-gap: 3px; padding: 5px 4px 5px 3px; }
+.palette.four .kind .ico { width: 24px; height: 24px; }
+.palette.four .kind b { font-size: 0.85rem; }
+.palette.four .kind small { font-size: 0.68rem; }
 .kind b { font-family: var(--font-display); font-weight: 400; font-size: 0.95rem; }
 .kind small { display: flex; align-items: center; gap: 2px; color: var(--muted); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
 .kind small .ico { grid-row: auto; width: 12px; height: 12px; }
@@ -648,6 +757,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .kind:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .sheet {
+	max-height: 34vh;
+	overflow-y: auto;
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);
 	gap: 4px 10px;
@@ -657,7 +768,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 	box-shadow: 0 8px 18px rgba(170, 110, 90, 0.12);
 }
 
-.sheet > .ico { grid-row: span 3; width: 46px; height: 46px; }
+.sheet > .ico { grid-row: span 3; width: 40px; height: 40px; }
+.sheet .close {
+	position: absolute;
+	right: 8px;
+	top: 6px;
+	width: 28px;
+	height: 28px;
+	border: 0;
+	border-radius: 50%;
+	background: #f6eee7;
+	color: var(--muted);
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+}
+.sheet { position: relative; }
 .sheet h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; }
 .sheet h3 small { font-family: var(--font-body); font-size: 0.72rem; color: var(--muted); margin-left: 4px; }
 .sheet p { margin: 0; color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
@@ -671,24 +797,63 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .ghost-tower { position: absolute; padding: 3px; opacity: 0.75; pointer-events: none; z-index: 3; animation: ghost 1s ease-in-out infinite; }
 @keyframes ghost { 50% { opacity: 0.45; } }
 
-.ready-btn { width: 100%; font-size: 1.1rem; padding: 10px 18px; }
-
-.dock-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.ready-btn { flex: 1; min-width: 0; font-size: 1.05rem; padding: 10px 14px; }
 .toggle { background: var(--mint-soft); color: var(--mint-deep); }
 .chip.restart-btn { background: #efe9e4; color: var(--muted); }
 .chip.restart-btn.asking { background: var(--butter-soft); color: #9a641a; }
 .toggle.off { background: #efe9e4; color: #a8978b; text-decoration: line-through; }
 .chip.codex-btn { background: var(--pink-soft); color: var(--pink-deep); }
 
-.codex {
-	width: min(400px, calc(100vw - 32px));
-	max-height: min(640px, calc(100vh - 48px));
-	padding: 18px 16px 16px;
-	border: 1px solid var(--line);
-	border-radius: 24px;
+/* 菜单和图鉴是从底部升起的面板 */
+.sheet-dialog {
+	width: min(460px, 100vw);
+	max-width: 100vw;
+	max-height: min(86dvh, 720px);
+	margin: auto auto 0;
+	padding: 18px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+	border: 0;
+	border-radius: 24px 24px 0 0;
 	background: var(--panel);
 	color: var(--ink);
-	box-shadow: 0 18px 44px rgba(150, 90, 70, 0.25);
+	box-shadow: 0 -12px 40px rgba(150, 90, 70, 0.25);
+	overscroll-behavior: contain;
+}
+.sheet-dialog[open] { animation: rise 0.25s ease-out; }
+@keyframes rise { from { transform: translateY(40px); opacity: 0.4; } }
+.sheet-dialog::backdrop { background: rgba(255, 248, 240, 0.6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.sheet-dialog h2 { margin: 0 0 4px; font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; text-align: center; }
+.sheet-dialog h3 { margin: 14px 0 8px; font-size: 0.8rem; font-weight: 400; letter-spacing: 0.1em; color: var(--muted); }
+.sheet-dialog form { display: flex; justify-content: center; margin-top: 14px; }
+.menu-now { margin: 0; color: var(--muted); font-size: 0.85rem; text-align: center; }
+.menu-note { margin: 6px 0 0; color: var(--pink-deep); font-size: 0.78rem; }
+.menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.menu-grid .chip { padding: 10px 12px; text-align: center; text-decoration: none; }
+a.chip { background: #efe9e4; color: var(--muted); }
+.gardens { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.garden-opt {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 2px 10px;
+	align-items: center;
+	width: 100%;
+	padding: 10px 12px;
+	border: 0;
+	border-radius: 16px;
+	background: #fdf8f3;
+	color: var(--ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.garden-opt b { font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; }
+.garden-opt small { grid-column: 1; color: var(--muted); font-size: 0.75rem; }
+.garden-opt .tag { grid-row: span 2; grid-column: 2; padding: 2px 10px; border-radius: 999px; background: var(--mint-soft); color: var(--mint-deep); font-size: 0.72rem; }
+.garden-opt.current { box-shadow: inset 0 0 0 2px var(--lav); background: var(--lav-soft); }
+.garden-opt:disabled { cursor: not-allowed; opacity: 0.55; }
+.garden-opt:disabled .tag { background: #efe9e4; color: var(--muted); }
+
+.codex {
+	width: min(460px, 100vw);
 }
 .codex::backdrop { background: rgba(255, 248, 240, 0.6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 .codex h2 { margin: 0 0 4px; font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; text-align: center; }
@@ -703,7 +868,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .codex li p { margin: 2px 0 0; color: var(--muted); font-size: 0.75rem; line-height: 1.5; }
 .codex form { display: flex; justify-content: center; }
 
-.hint { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.6; text-align: center; text-wrap: balance; }
 
 .tally {
 	display: flex;
@@ -721,7 +885,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 .toast {
 	position: fixed;
 	left: 50%;
-	bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+	bottom: calc(var(--dock-h, 150px) + 10px);
 	transform: translateX(-50%);
 	z-index: 2000;
 	padding: 10px 18px;
@@ -734,16 +898,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 }
 
 .overlay {
-	position: absolute;
+	position: fixed;
 	inset: 0;
-	z-index: 1000;
+	z-index: 1500;
 	display: grid;
 	place-items: center;
-	padding: 16px;
-	background: rgba(255, 248, 240, 0.55);
+	padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px));
+	overflow-y: auto;
+	background: rgba(255, 248, 240, 0.6);
 	-webkit-backdrop-filter: blur(4px);
 	backdrop-filter: blur(4px);
-	border-radius: 24px;
 }
 
 .panel {
@@ -850,14 +1014,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 				<div>
 					<h1><a href="/">晚安小菜园</a></h1>
 					<div class="meta">
-						<span id="night-label">第 1 夜 / 5</span>
+						<span id="night-label">第 1 夜</span>
 						<span class="basket" id="basket-wrap" title="菜筐里还有几颗菜"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#crate"/></svg><b id="basket">20</b></span>
 					</div>
 				</div>
 			</div>
-			<div class="room">
-				<span>房间 <code id="room-code">------</code></span>
+			<div class="bar-actions">
 				<button class="btn small" id="btn-invite" type="button"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#invite"/></svg>邀请</button>
+				<button class="icon-btn" id="btn-menu" type="button" aria-label="菜单"><i></i><i></i><i></i></button>
 			</div>
 		</header>
 
@@ -877,65 +1041,81 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 
 		<div class="map" id="map" aria-label="菜园地图">
 			<div class="layer" id="ground"></div>
+			<div class="layer puddles" id="puddles"></div>
 			<div class="layer" id="towers"></div>
 			<div class="layer units" id="units"></div>
 			<div class="layer fx" id="fx"></div>
 		</div>
+	</div>
+</div>
 
-		<section class="dock" id="dock">
-			<div class="dock" id="dock-day">
-				<div class="dock-row">
-					<div class="wallet"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#star"/></svg><b id="my-stars">0</b>我的星星</div>
-					<button class="chip" id="btn-gift" type="button">送对方 5 颗星星</button>
-				</div>
-				<div class="palette" id="palette"></div>
-				<div class="sheet" id="info" hidden></div>
-				<div class="sheet" id="sheet" hidden></div>
+<!-- 底部固定操作栏：手机上不用滚动就能点到，底部留出 Home 指示条的安全区 -->
+<section class="dock" id="dock">
+	<div class="dock-inner">
+		<div class="sheet" id="info" hidden></div>
+		<div class="sheet" id="sheet" hidden></div>
+		<div class="dock-rows" id="dock-day">
+			<div class="palette" id="palette"></div>
+			<div class="dock-row">
+				<button class="chip" id="btn-gift" type="button">送星星</button>
 				<button class="btn ready-btn" id="btn-ready" type="button">准备好了，天黑吧</button>
-				<p class="hint" id="hint"></p>
-			</div>
-			<div class="dock" id="dock-night" hidden>
-				<div class="tally" id="tally"></div>
-			</div>
-			<div class="emotes" id="emotes"></div>
-			<div class="dock-foot">
-				<button class="chip codex-btn" id="btn-codex" type="button">✦ 组合图鉴</button>
-				<button class="chip toggle" id="btn-music" type="button">音乐</button>
-				<button class="chip toggle" id="btn-sfx" type="button">音效</button>
-				<button class="chip restart-btn" id="btn-restart" type="button">重开</button>
-			</div>
-		</section>
-
-		<dialog class="codex" id="codex" aria-labelledby="codex-title">
-			<h2 id="codex-title">组合图鉴</h2>
-			<p>兔兔的植物和猫猫的装置挨着（斜对角也算）就会触发，一座塔可以同时有好几个组合。</p>
-			<ul id="codex-list"></ul>
-			<form method="dialog"><button class="btn" type="submit">知道啦</button></form>
-		</dialog>
-
-		<div class="overlay" id="overlay" hidden>
-			<div class="panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-				<div class="panel-icon" id="dialog-icon" aria-hidden="true"></div>
-				<h2 id="dialog-title"></h2>
-				<p id="dialog-text"></p>
-				<div class="invite-link" id="dialog-link" hidden></div>
-				<form id="name-form" hidden>
-					<input id="name-input" name="name" maxlength="16" autocomplete="nickname" placeholder="你的昵称，比如 小王" required>
-				</form>
-				<div class="cards" id="dialog-cards" hidden></div>
-				<div id="dialog-extra"></div>
-				<div class="actions" id="dialog-actions"></div>
 			</div>
 		</div>
+		<div class="dock-rows" id="dock-night" hidden>
+			<div class="tally" id="tally"></div>
+			<div class="emotes" id="emotes"></div>
+		</div>
+	</div>
+</section>
+
+<dialog class="sheet-dialog" id="menu" aria-labelledby="menu-title">
+	<h2 id="menu-title">菜单</h2>
+	<p class="menu-now" id="menu-now"></p>
+	<h3>选菜园</h3>
+	<ul class="gardens" id="garden-list"></ul>
+	<p class="menu-note" id="garden-note"></p>
+	<h3>发个表情</h3>
+	<div class="emotes" id="menu-emotes"></div>
+	<div class="menu-grid">
+		<button class="chip codex-btn" id="btn-codex" type="button">✦ 组合图鉴</button>
+		<button class="chip toggle" id="btn-music" type="button">音乐</button>
+		<button class="chip toggle" id="btn-sfx" type="button">音效</button>
+		<button class="chip restart-btn" id="btn-restart" type="button">重开</button>
+		<button class="chip" id="btn-copy" type="button">复制邀请链接</button>
+		<a class="chip" href="/">回首页</a>
+	</div>
+	<form method="dialog"><button class="btn ghost" type="submit">关闭</button></form>
+</dialog>
+
+<dialog class="sheet-dialog codex" id="codex" aria-labelledby="codex-title">
+	<h2 id="codex-title">组合图鉴</h2>
+	<p>兔兔的植物和猫猫的装置挨着（斜对角也算）就会触发，一座塔可以同时有好几个组合。</p>
+	<ul id="codex-list"></ul>
+	<form method="dialog"><button class="btn" type="submit">知道啦</button></form>
+</dialog>
+
+<div class="overlay" id="overlay" hidden>
+	<div class="panel" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+		<div class="panel-icon" id="dialog-icon" aria-hidden="true"></div>
+		<h2 id="dialog-title"></h2>
+		<p id="dialog-text"></p>
+		<div class="invite-link" id="dialog-link" hidden></div>
+		<form id="name-form" hidden>
+			<input id="name-input" name="name" maxlength="16" autocomplete="nickname" placeholder="你的昵称，比如 小王" required>
+		</form>
+		<div class="cards" id="dialog-cards" hidden></div>
+		<div id="dialog-extra"></div>
+		<div class="actions" id="dialog-actions"></div>
 	</div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script type="module">
 import {
-	meta, COLS, ROWS, CELL, TICK_MS, NIGHTS, ROLES, TOWERS, COMBOS, CRITTERS, CARDS, EMOTES, WAVES, MAX_LEVEL,
-	PATHS, CRATE, PATH_CELLS, NIGHT_BONUS, REVIVE_BASKET, WAVE_SPEED, HP_GROWTH, FLAG_EATING, FLAG_DAZED, FLAG_SLOW, FLAG_DROWSY,
-	canBuildAt, comboMap, towerRange, upgradeCost, simulateNight, settle,
+	meta, COLS, ROWS, CELL, TICK_MS, ROLES, TOWERS, COMBOS, CRITTERS, CARDS, EMOTES, MAX_LEVEL, GARDENS, WEATHERS,
+	REVIVE_BASKET, WAVE_SPEED, FLAG_EATING, FLAG_DAZED, FLAG_SLOW, FLAG_DROWSY, FLAG_STUCK,
+	canBuildAt, comboMap, towerRange, upgradeCost, simulateNight, settle, gardenOf, gardenById, isEndless, nightsOf,
+	towersFor, pathCells, waveSpawns, nightDifficulty, nightBonus, unlockedGardens, endlessUnlocked,
 } from "./logic.js";
 import { connectRoom, createRoom, getName, setName, inviteUrl, copyText, normalizeCode } from "/shared/room-client.js";
 import { icon } from "/shared/icons.js";
@@ -949,12 +1129,13 @@ const groundEl = $("#ground");
 const towersEl = $("#towers");
 const unitsEl = $("#units");
 const fxEl = $("#fx");
+const puddlesEl = $("#puddles");
 const overlay = $("#overlay");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const BARE_ICONS = new Set(["invite", "heart", "confetti", "flower", "sprout"]);
 
 let C = 36;
-let groundSize = 0;
+let groundKey = "";
 let roomCode = "";
 let conn = null;
 let connection = "connecting";
@@ -964,6 +1145,7 @@ let fatalMessage = "";
 let selectedKind = null;
 let selectedTower = null;
 let selectedCritter = null;
+let selectedWeather = false;
 let pendingSpot = null;   // 手机上没有悬停：先点格子预览，再点一次（或按"放在这里"）才建造
 let restartArmed = 0;     // 点了一下"重开"的时间，3 秒内再点才发起
 let freshTower = null;
@@ -1009,31 +1191,34 @@ function place(el, x, y, size = C) {
 
 // ---------- 地图 ----------
 
-function drawGround() {
-	if (groundSize === C) return;
-	groundSize = C;
+function drawGround(S) {
+	const garden = S ? gardenOf(S) : GARDENS[0];
+	const key = `${C}|${garden.id}`;
+	if (groundKey === key) return;
+	groundKey = key;
 	mapEl.style.setProperty("--c", `${C}px`);
 	mapEl.style.width = `${COLS * C}px`;
 	mapEl.style.height = `${ROWS * C}px`;
 	const nodes = [];
-	PATH_CELLS.forEach((key) => {
+	pathCells(garden.id).forEach((key) => {
 		const [x, y] = key.split(",").map(Number);
 		const tile = document.createElement("div");
 		tile.className = "tile-path";
 		nodes.push(place(tile, x * C, y * C));
 	});
-	Object.values(PATHS).forEach((points) => {
+	Object.values(garden.paths).forEach((points) => {
 		const [x, y] = points[0];
+		const [nx, ny] = points[1];
 		const start = document.createElement("div");
 		start.className = "start";
-		start.textContent = x === 0 ? "→" : "←";
+		start.textContent = nx > x ? "→" : nx < x ? "←" : ny > y ? "↓" : "↑";
 		nodes.push(place(start, x * C, y * C));
 	});
 	const crate = document.createElement("div");
 	crate.className = "crate";
 	crate.id = "crate";
 	crate.append(iconEl("crate"));
-	nodes.push(place(crate, CRATE[0] * C, CRATE[1] * C));
+	nodes.push(place(crate, garden.crate[0] * C, garden.crate[1] * C));
 	groundEl.replaceChildren(...nodes);
 }
 
@@ -1078,7 +1263,7 @@ function drawTowers(S) {
 
 	const tower = S.towers.find((item) => item.id === selectedTower);
 	if (tower && !night) {
-		const range = towerRange(tower, combos) / CELL * C;
+		const range = towerRange(tower, combos, S.weather) / CELL * C;
 		const ring = document.createElement("div");
 		ring.className = "range";
 		nodes.push(place(ring, (tower.x + 0.5) * C - range, (tower.y + 0.5) * C - range, range * 2));
@@ -1099,7 +1284,7 @@ function drawTowers(S) {
 		}
 		if (pendingSpot && canBuildAt(S, pendingSpot.x, pendingSpot.y)) {
 			const ghost = { id: -1, kind: selectedKind, x: pendingSpot.x, y: pendingSpot.y, level: 1 };
-			const range = towerRange(ghost, comboMap([...S.towers, ghost])) / CELL * C;
+			const range = towerRange(ghost, comboMap([...S.towers, ghost]), S.weather) / CELL * C;
 			const ring = document.createElement("div");
 			ring.className = "range";
 			nodes.push(place(ring, (ghost.x + 0.5) * C - range, (ghost.y + 0.5) * C - range, range * 2));
@@ -1124,6 +1309,7 @@ function stopReplay() {
 	replay = null;
 	unitsEl.replaceChildren();
 	fxEl.replaceChildren();
+	puddlesEl.replaceChildren();
 }
 
 function ensureReplay(S) {
@@ -1134,16 +1320,22 @@ function ensureReplay(S) {
 	const key = `${S.run.night}:${S.run.startedAt}`;
 	if (replay?.key === key) return;
 	stopReplay();
-	const sim = simulateNight({ night: S.run.night, towers: S.towers, basket: S.run.before.basket }, { record: true });
+	const weather = S.run.weather || "calm";
+	const sim = simulateNight({
+		garden: S.garden, mode: S.mode, night: S.run.night, weather, towers: S.towers, basket: S.run.before.basket,
+	}, { record: true });
+	const combos = comboMap(S.towers);
 	const towerPos = new Map(S.towers.map((tower) => [tower.id, {
 		x: (tower.x + 0.5) * CELL,
 		y: (tower.y + 0.5) * CELL,
-		range: towerRange(tower, comboMap(S.towers)),
+		range: towerRange(tower, combos, weather),
 	}]));
 	replay = {
 		key, sim, towerPos,
 		towerKind: new Map(S.towers.map((tower) => [tower.id, tower.kind])),
 		flights: [],
+		puddles: [],
+		garden: S.garden,
 		ambientTick: -1,
 		startedAt: S.run.startedAt,
 		basket: S.run.before.basket,
@@ -1175,6 +1367,8 @@ function animate(el, keyframes, options) {
 	fxEl.append(el);
 	const animation = el.animate(keyframes, options);
 	animation.onfinish = () => el.remove();
+	// 页面切到后台时动画会暂停、收不到 finish，到时间也一并清掉，免得特效越积越多
+	setTimeout(() => el.remove(), (options.duration || 0) + (options.delay || 0) + 200);
 	return animation;
 }
 
@@ -1216,9 +1410,12 @@ const SHOT_LOOK = {
 	straw: { className: "proj straw", arc: 1.5, sound: "lob" },
 	sun: { className: "proj sun", arc: 1.6, sound: "lob" },
 	pollen: { className: "proj pollen", arc: 1.4, sound: "lob" },
+	spike: { className: "proj spike", arc: 1.5, sound: "lob" },
+	honey: { className: "proj honey", arc: 1.3, sound: "lob" },
 };
 
-const HIT_SOUND = { drop: "splash", dew: "splash", straw: "thud", sun: "sun", pollen: "pollen" };
+const HIT_SOUND = { drop: "splash", dew: "splash", straw: "thud", sun: "sun", pollen: "pollen", spike: "thud" };
+const SPINNING = new Set(["straw", "sun", "pollen", "spike"]);
 
 function launch(effect) {
 	const tower = replay.towerPos.get(effect.tower);
@@ -1230,7 +1427,7 @@ function launch(effect) {
 	fxEl.append(el);
 	replay.flights.push({
 		el, start: effect.tick, arrive: effect.arrive, arc: look.arc,
-		x0: tower.x, y0: tower.y - 250, x1: target[1], y1: target[2], spin: effect.style !== "drop" && effect.style !== "dew",
+		x0: tower.x, y0: tower.y - 250, x1: target[1], y1: target[2], spin: SPINNING.has(effect.style),
 	});
 	kick(effect.tower, replay.towerKind.get(effect.tower));
 	sound.play(look.sound);
@@ -1275,11 +1472,12 @@ function impact(effect) {
 	if (effect.style === "dew") burst("bit petal", x, y, 6, C * 0.55, 520);
 	if (effect.style === "straw") burst("bit dust", x, y, 5, C * 0.5, 420);
 	if (effect.style === "sun") burst("bit spark", x, y, 7, C * 0.6, 500);
+	if (effect.style === "spike") burst("bit thorn", x, y, 7, C * 0.55, 450);
 	if (effect.style === "pollen") {
 		burst("bit pollen-dot", x, y, 9, C * 0.8, 700);
 		animate(fxAt("puff", x, y, C * 1.4), [{ transform: "scale(0.3)", opacity: 0.9 }, { transform: "scale(1)", opacity: 0 }], { duration: 650, easing: "ease-out" });
 	}
-	if (effect.style !== "drop" && effect.style !== "dew") {
+	if (SPINNING.has(effect.style)) {
 		const pop = fxAt("fx-pop", x, y);
 		pop.textContent = effect.style === "pollen" ? "z" : "!";
 		animate(pop, [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(-14px)" }], { duration: 600 });
@@ -1292,6 +1490,16 @@ function playEffect(effect) {
 		launch(effect);
 	} else if (effect.type === "hit") {
 		impact(effect);
+	} else if (effect.type === "puddle") {
+		sound.play("splat");
+		const size = px(effect.r) * 2;
+		const puddle = document.createElement("div");
+		puddle.className = `puddle ${effect.style}`;
+		puddle.style.width = puddle.style.height = `${size}px`;
+		puddle.style.left = `${px(effect.x) - size / 2}px`;
+		puddle.style.top = `${px(effect.y) - size / 2}px`;
+		puddlesEl.append(puddle);
+		replay.puddles.push({ el: puddle, until: effect.until });
 	} else if (effect.type === "wave" && tower) {
 		sound.play(effect.style === "warm" ? "warm" : "wind");
 		kick(effect.tower, "windmill");
@@ -1372,8 +1580,9 @@ function playEffect(effect) {
 		const text = document.createElement("div");
 		text.className = "fx-steal";
 		text.textContent = `-${effect.amount}`;
-		text.style.left = `${(CRATE[0] + 0.3) * C}px`;
-		text.style.top = `${(CRATE[1] - 0.3) * C}px`;
+		const [cx, cy] = gardenById(replay.garden).crate;
+		text.style.left = `${(cx + 0.3) * C}px`;
+		text.style.top = `${(cy - 0.3) * C}px`;
 		animate(text, [{ opacity: 1 }, { opacity: 0, transform: `translateY(${-C}px)` }], { duration: 900 });
 		[$("#crate"), $("#basket-wrap")].forEach((el) => {
 			el?.classList.remove("hit");
@@ -1389,7 +1598,7 @@ function ambient(frame, i) {
 	replay.ambientTick = i;
 	replay.towerPos.forEach((tower, id) => {
 		const kind = replay.towerKind.get(id);
-		if (kind !== "daisy" && kind !== "sunflower") return;
+		if (kind !== "daisy" && kind !== "sunflower" && kind !== "cactus") return;
 		const r2 = tower.range * tower.range;
 		const inRange = frame.filter((row) => {
 			const dx = row[1] - tower.x;
@@ -1400,8 +1609,19 @@ function ambient(frame, i) {
 			towersEl.querySelector(`.tower[data-id="${id}"]`)?.classList.toggle("shining", inRange.length > 0);
 			return;
 		}
-		if (reduceMotion || !inRange.length || (i + id) % 7 !== 0) return;
+		if (reduceMotion || !inRange.length) return;
 		const target = inRange[(i + id) % inRange.length];
+		if (kind === "cactus") {
+			if ((i + id) % 4 !== 0) return;
+			const thorn = fxAt("bit thorn", px(tower.x), px(tower.y));
+			const angle = Math.atan2(target[2] - tower.y, target[1] - tower.x) * 180 / Math.PI + 90;
+			animate(thorn, [
+				{ transform: `translate(0, 0) rotate(${angle}deg)`, opacity: 1 },
+				{ transform: `translate(${px(target[1] - tower.x)}px, ${px(target[2] - tower.y)}px) rotate(${angle}deg)`, opacity: 0.6 },
+			], { duration: 220, easing: "ease-in" });
+			return;
+		}
+		if ((i + id) % 7 !== 0) return;
 		const dot = fxAt("bit pollen-dot", px(tower.x), px(tower.y) - C * 0.2);
 		animate(dot, [
 			{ transform: "translate(0, 0)", opacity: 0 },
@@ -1436,6 +1656,7 @@ function step() {
 		el.classList.toggle("dazed", (flag & FLAG_DAZED) > 0);
 		el.classList.toggle("slowed", (flag & FLAG_SLOW) > 0);
 		el.classList.toggle("drowsy", (flag & FLAG_DROWSY) > 0);
+		el.classList.toggle("stuck", (flag & FLAG_STUCK) > 0);
 	});
 	replay.els.forEach((el, id) => {
 		if (seen.has(id)) return;
@@ -1452,6 +1673,12 @@ function step() {
 	}
 	moveFlights(t);
 	ambient(frame, i);
+	replay.puddles = replay.puddles.filter((puddle) => {
+		if (t < puddle.until) return true;
+		puddle.el.classList.add("fading");
+		setTimeout(() => puddle.el.remove(), 650);
+		return false;
+	});
 	$("#basket").textContent = String(Math.max(0, replay.basket - replay.stolen));
 	$("#tally").innerHTML = `<span>哄睡 <b>${replay.slept}</b> 只</span><span>被叼走 <b>${replay.stolen}</b> 颗菜</span>`;
 	replay.raf = requestAnimationFrame(step);
@@ -1459,17 +1686,31 @@ function step() {
 
 // ---------- 界面 ----------
 
+// 地图在标题区和底部操作栏之间尽量放大：按屏幕实际剩下的高度和宽度取较小的格子边长。
+// 操作栏只算固定的两行（展开说明面板时盖在地图下沿上，不让地图跳动）。
+let dockBase = 0;
 function fit() {
-	const width = document.querySelector(".wrap").clientWidth;
-	const byWidth = Math.floor(Math.min(width, 440) / COLS);
-	const byHeight = Math.floor((window.innerHeight - 330) / ROWS);
-	C = Math.max(26, Math.min(46, byWidth, byHeight));
+	const dock = $("#dock");
+	// 只量白天那两行（比夜里高），白天黑夜切换时地图大小不变
+	const rows = $("#dock-day");
+	if (!rows.hidden && rows.offsetHeight) {
+		const style = getComputedStyle(dock);
+		dockBase = Math.max(dockBase, rows.offsetHeight + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom));
+	}
+	document.documentElement.style.setProperty("--dock-h", `${dock.offsetHeight}px`);
+	const width = Math.min(document.querySelector(".wrap").clientWidth, 460);
+	const viewport = window.visualViewport?.height || window.innerHeight;
+	const top = mapEl.getBoundingClientRect().top + window.scrollY;
+	const byHeight = Math.floor((viewport - top - (dockBase || 150) - 10) / ROWS);
+	C = Math.max(24, Math.min(54, Math.floor(width / COLS), byHeight));
 }
 
 function render() {
-	fit();
-	drawGround();
-	if (!view) return;
+	if (!view) {
+		fit();
+		drawGround(null);
+		return;
+	}
 	const S = current();
 	const seat = mySeat();
 	const night = S.status === "night";
@@ -1482,13 +1723,17 @@ function render() {
 		selectedKind = null;
 		selectedTower = null;
 	}
-	$("#night-label").textContent = `第 ${S.status === "night" ? S.run.night : S.night} 夜 / ${NIGHTS}`;
-	drawTowers(S);
-	ensureReplay(S);
+	const nightNo = S.status === "night" ? S.run.night : S.night;
+	$("#night-label").textContent = isEndless(S) ? `无尽 · 第 ${nightNo} 夜` : `${gardenOf(S).name} · ${nightNo}/${nightsOf(S)} 夜`;
 	renderPlayers(S);
 	renderForecast(S);
 	renderDock(S);
+	fit();
+	drawGround(S);
+	drawTowers(S);
+	ensureReplay(S);
 	renderOverlay(S);
+	if ($("#menu").open) renderMenu(S);
 	sound.setTheme(night ? "night" : "day");
 	if (lastStatus && lastStatus !== S.status) {
 		if (S.status === "dawn") sound.play("dawn");
@@ -1538,14 +1783,24 @@ function renderPlayers(S) {
 
 function renderForecast(S) {
 	const el = $("#forecast");
+	const weatherKey = (S.status === "night" ? S.run.weather : S.weather) || "calm";
+	const weather = document.createElement("button");
+	weather.type = "button";
+	weather.className = "badge weather" + (selectedWeather ? " selected" : "");
+	weather.dataset.weather = weatherKey;
+	weather.append(iconEl(WEATHERS[weatherKey].icon), document.createTextNode(WEATHERS[weatherKey].name));
 	if (S.status === "night") {
-		el.textContent = "两人一起看着菜园，可以在下面发表情";
+		el.replaceChildren(weather, document.createTextNode("两人一起看着菜园，下面可以发表情"));
 		return;
 	}
-	const night = Math.min(S.night, NIGHTS);
+	const garden = document.createElement("button");
+	garden.type = "button";
+	garden.className = "badge garden";
+	garden.dataset.menu = "1";
+	garden.textContent = isEndless(S) ? "无尽模式 ▾" : `${gardenOf(S).name} ▾`;
 	const counts = {};
-	(WAVES[night] || []).forEach(([kind, , count]) => { counts[kind] = (counts[kind] || 0) + count; });
-	const nodes = [document.createTextNode(`第 ${night} 夜会来：`)];
+	waveSpawns(S.garden, S.mode, S.night).forEach((spawn) => { counts[spawn.kind] = (counts[spawn.kind] || 0) + 1; });
+	const nodes = [garden, weather];
 	Object.entries(counts).forEach(([kind, count]) => {
 		const foe = document.createElement("button");
 		foe.type = "button";
@@ -1570,6 +1825,7 @@ function towerStats(kind, level = 1) {
 	if (def.hold) parts.push(`啃 ${def.hold[L] / 10} 秒`);
 	if (def.push) parts.push(`吓退 ${cells(def.push[L])} 格`);
 	if (def.damage) parts.push(`每下困 ${def.damage[L]}`);
+	if (def.puddle) parts.push(`蜂蜜半径 ${cells(def.puddle[L])} 格 · 黏 ${def.stick[L] / 10} 秒`);
 	if (def.cooldown) parts.push(`${def.cooldown[L] / 10} 秒一次`);
 	return parts.join(" · ");
 }
@@ -1603,7 +1859,7 @@ function renderSheet(S, seat) {
 	const combos = [...(comboMap(S.towers).get(tower.id) || [])].map((id) => COMBOS.find((combo) => combo.id === id));
 	sheet.hidden = false;
 	sheet.replaceChildren();
-	sheet.append(iconEl(def.icon));
+	sheet.append(closeButton(), iconEl(def.icon));
 	const title = document.createElement("h3");
 	title.textContent = def.name;
 	const level = document.createElement("small");
@@ -1654,10 +1910,37 @@ function renderSheet(S, seat) {
 	sheet.append(acts);
 }
 
-// 点了塔种类、预览格子或者小偷时，在操作区显示说明
+function closeButton() {
+	const button = document.createElement("button");
+	button.type = "button";
+	button.className = "close";
+	button.setAttribute("aria-label", "关闭说明");
+	button.textContent = "×";
+	button.addEventListener("click", () => {
+		selectedKind = null;
+		selectedTower = null;
+		selectedCritter = null;
+		selectedWeather = false;
+		pendingSpot = null;
+		render();
+	});
+	return button;
+}
+
+// 点了塔种类、预览格子、小偷或天气时，在操作区显示说明
 function renderInfo(S, seat) {
 	const info = $("#info");
-	info.replaceChildren();
+	info.replaceChildren(closeButton());
+	if (selectedWeather) {
+		const key = (S.status === "night" ? S.run.weather : S.weather) || "calm";
+		const title = document.createElement("h3");
+		title.textContent = WEATHERS[key].name;
+		const desc = document.createElement("p");
+		desc.textContent = WEATHERS[key].desc;
+		info.append(iconEl(WEATHERS[key].icon), title, desc);
+		info.hidden = false;
+		return;
+	}
 	if (selectedKind) {
 		const def = TOWERS[selectedKind];
 		const cost = S.perks[seat].sale ? Math.ceil(def.cost / 2) : def.cost;
@@ -1693,7 +1976,9 @@ function renderInfo(S, seat) {
 			acts.append(ok, cancel);
 			info.append(combo, acts);
 		} else {
+			const available = towersFor(S, 1 - TOWERS[selectedKind].seat);
 			const partners = COMBOS.filter((item) => item.pair.includes(selectedKind))
+				.filter((item) => available.includes(item.pair.find((kind) => kind !== selectedKind)))
 				.map((item) => `${TOWERS[item.pair.find((kind) => kind !== selectedKind)].name}→${item.name}`);
 			combo.textContent = `挨着${ROLES[1 - TOWERS[selectedKind].seat].name}的 ${partners.join("、")}`;
 			info.append(combo);
@@ -1703,15 +1988,14 @@ function renderInfo(S, seat) {
 	}
 	if (selectedCritter) {
 		const def = CRITTERS[selectedCritter];
-		const night = Math.min(S.night, NIGHTS);
 		const title = document.createElement("h3");
 		title.textContent = def.name;
 		const desc = document.createElement("p");
 		desc.textContent = def.desc;
 		const stats = document.createElement("p");
 		stats.className = "stats";
-		const hp = Math.floor(def.hp * (100 + (night - 1) * HP_GROWTH) / 100);
-		stats.textContent = `清醒值 ${hp} · 每秒走 ${cells(def.speed * 10)} 格 · 一次叼走 ${def.steal} 颗 · 哄睡得 ${def.reward} 星星`;
+		const hp = Math.floor(def.hp * nightDifficulty(S.garden, S.mode, S.night).hp / 100);
+		stats.textContent = `今晚清醒值 ${hp} · 每秒走 ${cells(def.speed * 10)} 格 · 一次叼走 ${def.steal} 颗 · 哄睡得 ${def.reward / 10} 星星`;
 		info.append(iconEl(def.icon), title, desc, stats);
 		info.hidden = false;
 		return;
@@ -1725,10 +2009,13 @@ function renderDock(S) {
 	$("#dock-day").hidden = !day || seat === null;
 	$("#dock-night").hidden = day;
 	if (seat === null) return;
-	$("#my-stars").textContent = String(S.status === "night" ? S.run.before.stars[seat] : S.stars[seat]);
 	$("#btn-gift").disabled = S.stars[seat] < 1 || playerCount() < meta.minPlayers;
-	$("#btn-gift").textContent = `送${nameOf(1 - seat)} ${Math.min(5, Math.max(1, S.stars[seat]))} 颗星星`;
-	$("#palette").replaceChildren(...ROLES[seat].towers.map((kind) => kindButton(S, kind, seat)));
+	$("#btn-gift").textContent = `送TA ${Math.min(5, Math.max(1, S.stars[seat]))}★`;
+	const kinds = towersFor(S, seat);
+	const palette = $("#palette");
+	palette.style.setProperty("--kinds", String(kinds.length));
+	palette.classList.toggle("four", kinds.length > 3);
+	palette.replaceChildren(...kinds.map((kind) => kindButton(S, kind, seat)));
 	renderInfo(S, seat);
 	renderSheet(S, seat);
 	const votes = S.restartVote || [false, false];
@@ -1741,10 +2028,6 @@ function renderDock(S) {
 	ready.disabled = S.status !== "day" || playerCount() < meta.minPlayers;
 	ready.className = "btn ready-btn" + (S.ready[seat] ? " ghost" : " night-btn");
 	ready.textContent = S.ready[seat] ? "取消准备" : "准备好了，天黑吧";
-	const partner = ROLES[1 - seat];
-	$("#hint").textContent = selectedKind
-		? `点虚线格子先预览范围，再点一次或按"放在这里"才建造；粉色 ✦ 格子能和对方的塔组合`
-		: `你是${ROLES[seat].name}，负责${ROLES[seat].towers.map((kind) => TOWERS[kind].name).join("、")}；${partner.name}负责${partner.towers.map((kind) => TOWERS[kind].name).join("、")}。两人的塔挨着会有组合效果 ✦`;
 }
 
 function showDialog({ title, text = "", iconName = "sunflower", link = "", actions = [], nameForm = false, cards = null, extra = null }) {
@@ -1788,7 +2071,7 @@ function renderOverlay(S) {
 	if (playerCount() < meta.minPlayers) {
 		showDialog({
 			title: "等另一位玩家",
-			text: `把链接发给对方，对方打开后就能一起守菜园。房间码 ${roomCode}`,
+			text: `把链接发给对方，对方打开后就能一起守菜园。房间码 ${roomCode}。先进来的是兔兔，负责种花；后进来的是猫猫，负责造机关。`,
 			iconName: "invite",
 			link: inviteUrl(meta.id, roomCode),
 			actions: [["复制邀请链接", copyInvite, false]],
@@ -1824,7 +2107,7 @@ function renderOverlay(S) {
 		showDialog({
 			title: "天亮啦",
 			iconName: "flower",
-			text: `${summary(S)}每人得到 ${S.run.result.earned + NIGHT_BONUS} 颗星星。` +
+			text: `${summary(S)}每人得到 ${S.run.result.earned + nightBonus(S.run.night)} 颗星星。` +
 				(picked === null ? "选一张惊喜卡：" : `等${nameOf(1 - seat)}选卡…`),
 			cards,
 		});
@@ -1847,21 +2130,33 @@ function renderOverlay(S) {
 			extra.append(hold, state);
 			if (otherHolding) setTimeout(render, 750);
 		}
+		const record = isEndless(S) ? `无尽模式最远守到第 ${S.best} 夜。` : "";
 		showDialog({
 			title: "菜被偷光了",
 			iconName: "sheep",
-			text: `第 ${S.run?.night || S.night} 夜没守住。${summary(S)}` + (S.revive > 0 ? `复活会回到这一夜的白天，菜筐补到 ${REVIVE_BASKET} 颗。` : ""),
+			text: `第 ${S.run?.night || S.night} 夜没守住。${summary(S)}${record}` + (S.revive > 0 ? `复活会回到这一夜的白天，菜筐补到 ${REVIVE_BASKET} 颗。` : ""),
 			extra,
-			actions: [["从第 1 夜重来", () => send({ type: "restart" }), S.revive > 0]],
+			actions: [
+				["从第 1 夜重来", () => send({ type: "restart" }), S.revive > 0],
+				["换个菜园", openMenu, true],
+			],
 		});
 		return;
 	}
 	if (S.status === "win") {
+		// 通关：去下一座菜园、玩无尽模式，或者再守一次
+		const index = GARDENS.findIndex((garden) => garden.id === S.garden);
+		const next = GARDENS[index + 1];
+		const actions = [];
+		if (next) actions.push([`去${next.name}`, () => send({ type: "setup", garden: next.id, mode: "story" }), false]);
+		actions.push(["无尽模式", () => send({ type: "setup", garden: S.garden, mode: "endless" }), !!next]);
+		actions.push(["再守一次", () => send({ type: "restart" }), true]);
 		showDialog({
-			title: "守住了 5 个夜晚",
+			title: `守住了${gardenOf(S).name}`,
 			iconName: "confetti",
-			text: `${summary(S)}菜筐里还剩 ${S.basket} 颗菜，晚安，小菜园。`,
-			actions: [["再守一座菜园", () => send({ type: "restart" }), false]],
+			text: `${gardenOf(S).nights} 个夜晚都守住了。${summary(S)}菜筐里还剩 ${S.basket} 颗菜。` +
+				(next ? `下一座是${next.name}：${next.desc}，还会解锁仙人掌和蜂蜜罐。` : "三座菜园都守住啦，晚安，小菜园。"),
+			actions,
 		});
 		return;
 	}
@@ -1912,7 +2207,18 @@ function showEmote(seat, name) {
 function onServerMessage(message) {
 	clockOffset = message.serverTime ? message.serverTime - Date.now() : clockOffset;
 	view = message;
+	saveProgress(message.state);
+	if (message.you !== null && message.room.players.length >= meta.minPlayers) reportProgress(message.state);
 	const event = message.event;
+	if (event?.type === "setup") {
+		selectedKind = null;
+		selectedTower = null;
+		selectedCritter = null;
+		pendingSpot = null;
+		if ($("#menu").open) $("#menu").close();
+		const S = message.state;
+		toast(S.mode === "endless" ? "开始无尽模式，看能守几夜" : `来到${gardenById(S.garden).name}，第 1 夜`);
+	}
 	if (event?.type === "emote") showEmote(event.seat, event.name);
 	const cue = { build: "build", upgrade: "upgrade", sell: "sell", night: "night", pick: "pop", gift: "gift", emote: "pop", revive: "win", restart: "pop" }[event?.type];
 	if (cue) sound.play(cue);
@@ -1950,8 +2256,22 @@ $("#palette").addEventListener("click", (event) => {
 });
 
 $("#forecast").addEventListener("click", (event) => {
+	if (event.target.closest(".badge.garden")) {
+		openMenu();
+		return;
+	}
+	if (event.target.closest(".badge.weather")) {
+		selectedWeather = !selectedWeather;
+		selectedKind = null;
+		selectedTower = null;
+		selectedCritter = null;
+		pendingSpot = null;
+		render();
+		return;
+	}
 	const foe = event.target.closest(".foe");
 	if (!foe) return;
+	selectedWeather = false;
 	selectedCritter = selectedCritter === foe.dataset.critter ? null : foe.dataset.critter;
 	selectedKind = null;
 	selectedTower = null;
@@ -2014,14 +2334,94 @@ $("#btn-ready").addEventListener("click", () => {
 	send({ type: "ready", ready: !S.ready[mySeat()] });
 });
 
-$("#emotes").replaceChildren(...Object.entries(EMOTES).map(([name, label]) => {
-	const chip = document.createElement("button");
-	chip.type = "button";
-	chip.className = "chip";
-	chip.textContent = label;
-	chip.addEventListener("click", () => send({ type: "emote", name }));
-	return chip;
-}));
+["#emotes", "#menu-emotes"].forEach((selector) => {
+	$(selector).replaceChildren(...Object.entries(EMOTES).map(([name, label]) => {
+		const chip = document.createElement("button");
+		chip.type = "button";
+		chip.className = "chip";
+		chip.textContent = label;
+		chip.addEventListener("click", () => send({ type: "emote", name }));
+		return chip;
+	}));
+});
+
+// ---------- 菜单：选菜园、图鉴、音乐音效、重开、邀请 ----------
+
+function openMenu() {
+	const S = view && current();
+	if (S) renderMenu(S);
+	if (!$("#menu").open) $("#menu").showModal();
+}
+
+function renderMenu(S) {
+	const fresh = S.status === "day" && S.night === 1 && S.towers.length === 0;
+	const canSetup = fresh || S.status === "win" || S.status === "fail";
+	$("#menu-now").textContent = (isEndless(S)
+		? `${gardenOf(S).name} · 无尽模式第 ${S.night} 夜（最远 ${S.best} 夜）`
+		: `${gardenOf(S).name} · 第 ${S.night}/${gardenOf(S).nights} 夜`) + ` · 房间码 ${roomCode}`;
+	const unlocked = unlockedGardens(S.cleared);
+	const options = [];
+	GARDENS.forEach((garden) => {
+		options.push({ garden: garden.id, mode: "story", name: garden.name, desc: `${garden.desc} · ${garden.nights} 夜`, open: unlocked.includes(garden.id), done: S.cleared.includes(garden.id) });
+	});
+	options.push({ garden: S.garden, mode: "endless", name: "无尽模式", desc: `在${gardenOf(S).name}一直守下去，看能撑几夜`, open: endlessUnlocked(S.cleared), done: false });
+	$("#garden-list").replaceChildren(...options.map((option) => {
+		const item = document.createElement("li");
+		const button = document.createElement("button");
+		button.type = "button";
+		const current = option.garden === S.garden && option.mode === S.mode;
+		button.className = "garden-opt" + (current ? " current" : "");
+		button.disabled = !option.open || !canSetup || current;
+		button.innerHTML = "<b></b><small></small><span class=\"tag\"></span>";
+		button.querySelector("b").textContent = option.name;
+		button.querySelector("small").textContent = option.desc;
+		button.querySelector(".tag").textContent = !option.open
+			? (option.mode === "endless" ? "通关一座后解锁" : "通关上一座解锁")
+			: current ? "正在玩" : option.done ? "已通关" : "可以玩";
+		button.addEventListener("click", () => send({ type: "setup", garden: option.garden, mode: option.mode }));
+		item.append(button);
+		return item;
+	}));
+	$("#garden-note").textContent = canSetup ? "" : "这一局已经开始了，想换菜园要先重开（需要对方同意）。";
+	renderToggles();
+}
+
+$("#btn-menu").addEventListener("click", openMenu);
+$("#btn-copy").addEventListener("click", copyInvite);
+
+// ---------- 通关记录存在各自的设备上，进房间时报给服务端，两人合在一起决定能选哪些菜园 ----------
+
+const PROGRESS_KEY = "goodnight-garden:progress";
+
+function loadProgress() {
+	try {
+		const data = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
+		return { cleared: Array.isArray(data.cleared) ? data.cleared : [], best: Number(data.best) || 0 };
+	} catch {
+		return { cleared: [], best: 0 };
+	}
+}
+
+function saveProgress(state) {
+	const local = loadProgress();
+	const cleared = [...new Set([...local.cleared, ...(state.cleared || [])])];
+	const best = Math.max(local.best, state.best || 0);
+	if (cleared.length === local.cleared.length && best === local.best) return;
+	try {
+		localStorage.setItem(PROGRESS_KEY, JSON.stringify({ cleared, best }));
+	} catch {
+		// 存不下就只在这个房间里有效
+	}
+}
+
+let progressSent = false;
+function reportProgress(state) {
+	if (progressSent) return;
+	progressSent = true;
+	const local = loadProgress();
+	const missing = local.cleared.some((id) => !(state.cleared || []).includes(id)) || local.best > (state.best || 0);
+	if (missing) send({ type: "progress", cleared: local.cleared, best: local.best });
+}
 
 $("#btn-invite").addEventListener("click", copyInvite);
 
@@ -2052,6 +2452,7 @@ function renderCodex() {
 }
 
 $("#btn-codex").addEventListener("click", () => {
+	if ($("#menu").open) $("#menu").close();
 	renderCodex();
 	$("#codex").showModal();
 });
@@ -2071,6 +2472,10 @@ $("#btn-sfx").addEventListener("click", () => sound.toggle("sfx"));
 sound.onChange(renderToggles);
 renderToggles();
 window.addEventListener("resize", render);
+window.visualViewport?.addEventListener("resize", render);
+new ResizeObserver(() => {
+	document.documentElement.style.setProperty("--dock-h", `${$("#dock").offsetHeight}px`);
+}).observe($("#dock"));
 
 function connect(name) {
 	conn = connectRoom(roomCode, {
@@ -2124,7 +2529,6 @@ async function start() {
 			return;
 		}
 	}
-	$("#room-code").textContent = roomCode;
 	const name = getName();
 	if (name) connect(name);
 	else askName();

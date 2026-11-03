@@ -92,7 +92,8 @@ export function createSound() {
 		if (wantedTheme && !theme) startTheme(wantedTheme);
 	}
 
-	["pointerdown", "keydown"].forEach((type) => window.addEventListener(type, unlock, { passive: true }));
+	// iPhone 的 Safari 对哪种触摸事件能启动声音比较挑，几种都挂上
+	["pointerdown", "touchend", "click", "keydown"].forEach((type) => window.addEventListener(type, unlock, { passive: true }));
 	document.addEventListener("visibilitychange", () => {
 		if (!ctx) return;
 		if (document.hidden) ctx.suspend();
@@ -231,6 +232,7 @@ export function createSound() {
 		sprout: (t) => { osc(sfxBus, "sine", 500, 950, t, 0.09, 0.12); noise(sfxBus, "bandpass", 1800, 1500, t + 0.08, 0.04, 0.08, 3); },
 		scent: (t) => { noise(sfxBus, "bandpass", 1800, 1500, t, 0.04, 0.08, 3); bell(sfxBus, 86, t + 0.05, 0.04, 0.7); },
 		trap: (t) => osc(sfxBus, "triangle", 420, 180, t, 0.2, 0.12),
+		splat: (t) => { noise(sfxBus, "lowpass", 900, 250, t, 0.18, 0.14); osc(sfxBus, "sine", 260, 120, t, 0.16, 0.12); },
 		sleep: (t) => { bell(sfxBus, 88, t, 0.06, 0.9); bell(sfxBus, 84, t + 0.13, 0.05, 1.1); },
 		steal: (t) => { osc(sfxBus, "square", 330, 220, t, 0.1, 0.04); osc(sfxBus, "square", 262, 175, t + 0.13, 0.16, 0.04); },
 		build: (t) => { osc(sfxBus, "sine", 400, 900, t, 0.1, 0.14); bell(sfxBus, 91, t + 0.06, 0.04, 0.5); },
@@ -246,7 +248,7 @@ export function createSound() {
 	};
 
 	// 同一种音效太密时跳过，避免一堆水滴同时响成噪音
-	const GAP = { drop: 0.07, dew: 0.07, splash: 0.07, lob: 0.08, thud: 0.08, sleep: 0.09, lure: 0.08, steal: 0.12 };
+	const GAP = { splat: 0.1, drop: 0.07, dew: 0.07, splash: 0.07, lob: 0.08, thud: 0.08, sleep: 0.09, lure: 0.08, steal: 0.12 };
 
 	function play(name) {
 		if (!ctx || ctx.state !== "running" || !prefs.sfx || !SFX[name]) return;
