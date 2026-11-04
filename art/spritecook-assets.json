@@ -1,0 +1,42 @@
+{
+	"project_id": "cfa03891-9765-46af-8a2e-63c3af00a4f2",
+	"model": "gpt-image-2.5-flare, medium, 1K, pixel=false, transparent",
+	"style": "soft healing storybook illustration, chibi proportions with big heads, rounded shapes, thick warm dark-brown outlines (#4A3A33), flat pastel fills with gentle soft shading, cute and cozy like a picture book",
+	"assets": [
+		{
+			"asset_id": "ede1e9b1-f52f-4a6e-ad96-b9d6ffd0efbe",
+			"sha12": "8537d7847520",
+			"label": "style-sample-lineup",
+			"file": "spritecook/style-sample-lineup.png",
+			"note": "兔兔、猫猫和 7 种小偷"
+		},
+		{
+			"asset_id": "b9d5cbce-0a8a-41d4-ba3f-dc1f3560e383",
+			"sha12": "84788b46a48a",
+			"label": "towers-sheet",
+			"file": "spritecook/towers-sheet.png",
+			"note": "8 种塔和菜筐"
+		},
+		{
+			"asset_id": "33023243-13d7-41d5-9580-e2994614a57a",
+			"sha12": "26a41f85c5ef",
+			"label": "sleeping-sheet",
+			"file": "spritecook/sleeping-sheet.png",
+			"note": "睡着的小偷和兔兔猫猫"
+		},
+		{
+			"asset_id": "16e1e8ab-795b-4298-930c-e311200cb050",
+			"sha12": "a5f25cdc3ed5",
+			"label": "icons-sheet",
+			"file": "spritecook/icons-sheet.png",
+			"note": "星星、天气、爱心等小图标"
+		},
+		{
+			"asset_id": "ab99d3f4-037c-4008-b530-b458add9e771",
+			"sha12": "e86cddbb76e1",
+			"label": "decor-sheet",
+			"file": "spritecook/decor-sheet.png",
+			"note": "地图装饰"
+		}
+	]
+}

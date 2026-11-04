@@ -196,11 +196,11 @@ export const CRITTERS = {
 export const WEATHERS = {
 	calm: { name: "晴朗的夜", icon: "moon", desc: "没什么特别的" },
 	rain: { name: "小雨夜", icon: "rain", desc: "洒水壶每下更困 +30%，小偷走得慢 10%" },
-	wind: { name: "大风夜", icon: "windmill", desc: "风车范围 +0.4 格，吹得更勤" },
-	fullmoon: { name: "满月夜", icon: "moon", desc: "小偷兴奋，走得快 15%，但哄睡多给 50% 星星" },
-	fog: { name: "起雾了", icon: "rain", desc: "看不清，所有塔的范围 -15%" },
-	firefly: { name: "萤火虫夜", icon: "star", desc: "萤火虫帮忙：向日葵、小雏菊、仙人掌范围 +0.3 格" },
-	harvest: { name: "丰收夜", icon: "crate", desc: "守住的话天亮后菜筐 +2" },
+	wind: { name: "大风夜", icon: "wind", desc: "风车范围 +0.4 格，吹得更勤" },
+	fullmoon: { name: "满月夜", icon: "fullmoon", desc: "小偷兴奋，走得快 15%，但哄睡多给 50% 星星" },
+	fog: { name: "起雾了", icon: "fog", desc: "看不清，所有塔的范围 -15%" },
+	firefly: { name: "萤火虫夜", icon: "firefly", desc: "萤火虫帮忙：向日葵、小雏菊、仙人掌范围 +0.3 格" },
+	harvest: { name: "丰收夜", icon: "harvest", desc: "守住的话天亮后菜筐 +2" },
 };
 
 function pickWeather(random) {

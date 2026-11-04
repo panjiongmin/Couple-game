@@ -80,6 +80,14 @@ test/
 - 房间使用 WebSocket Hibernation：没人操作时房间会休眠，不产生持续计费。心跳 `ping` 由运行时直接回 `pong`，不会唤醒房间。
 - 房间闲置 7 天后自动清理。
 
+## 晚安小菜园的插画
+
+角色、塔、睡着的小偷、天气和星星图标、地图装饰（共 45 张）是用 [SpriteCook](https://spritecook.ai) 生成的，模型 gpt-image-2.5-flare，统一的风格描述是"绘本感、Q 版大头、圆润、暖棕粗描边、柔和粉彩"。素材的使用条款以 SpriteCook 的服务条款为准。
+
+- `art/spritecook/*.png`：生成的原图，每张是 3×3 的合集；`art/spritecook-assets.json` 记着每张图在 SpriteCook 里的编号和生成参数，以后照同一风格补图时用作参考。
+- `art/slice-sheets.py`：把合集图按 3×3 切开，清掉边缘的半透明光晕和邻格伸过来的碎块，裁边、缩到最长边 192px，存成 WebP 到 `public/games/goodnight-garden/art/`（共约 560 KB）。改了原图后在仓库根目录跑 `python art/slice-sheets.py`（需要 Pillow 和 numpy）。
+- 页面里 `iconEl(name)` 先找 `art/` 下有没有同名插画，没有再用 `icons.svg` 里的图标，所以界面小图标（邀请、礼花、道具按钮）还是原来的 SVG。
+
 ## 图标
 
 界面是奶油底色加粉、薄荷、薰衣草、奶黄四种柔和色，图标来自 [iconfont](https://www.iconfont.cn/)，版权归原作者所有：

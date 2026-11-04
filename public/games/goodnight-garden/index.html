@@ -401,22 +401,32 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 	font-size: calc(var(--c) * 0.42);
 }
 
+img.ico { object-fit: contain; -webkit-user-drag: none; pointer-events: none; }
+
 .tower {
 	position: absolute;
 	width: var(--c);
 	height: var(--c);
-	padding: 2px;
+	padding: 0;
 	border: 0;
 	border-radius: 30%;
-	background: rgba(255, 255, 255, 0.72);
-	box-shadow: inset 0 0 0 2px var(--pink), 0 3px 8px rgba(120, 90, 70, 0.18);
+	background: radial-gradient(ellipse 46% 22% at 50% 86%, rgba(255, 157, 183, 0.55), transparent 70%);
 	cursor: pointer;
 	z-index: 3;
 }
 
-.tower.seat-1 { box-shadow: inset 0 0 0 2px var(--butter), 0 3px 8px rgba(120, 90, 70, 0.18); }
+.tower.seat-1 { background: radial-gradient(ellipse 46% 22% at 50% 86%, rgba(247, 200, 94, 0.6), transparent 70%); }
+.tower > .ico { position: relative; width: 112%; height: 112%; margin: -12% -6% 0; filter: drop-shadow(0 2px 2px rgba(80, 50, 30, 0.25)); }
+
+/* 地图上的装饰：只是好看，放了塔的格子会把它藏起来 */
+.decor { position: absolute; pointer-events: none; z-index: 1; opacity: 0.95; }
+.decor .ico { filter: drop-shadow(0 2px 1px rgba(80, 50, 30, 0.2)); }
+.map.night .decor { filter: brightness(0.82) saturate(0.85); }
+.map.night .decor.glow .ico { filter: drop-shadow(0 0 6px rgba(255, 220, 140, 0.95)); }
+.map.night .decor.glow { filter: none; }
 .tower.selected { outline: 3px solid var(--lav-deep); outline-offset: 1px; }
-.map.night .tower { background: rgba(255, 252, 238, 0.92); box-shadow: inset 0 0 0 2px rgba(255, 230, 160, 0.9), 0 0 14px rgba(255, 228, 150, 0.55); cursor: default; }
+.map.night .tower { background: radial-gradient(ellipse 50% 26% at 50% 86%, rgba(255, 228, 150, 0.6), transparent 72%); cursor: default; }
+.map.night .tower > .ico { filter: drop-shadow(0 0 5px rgba(255, 228, 150, 0.75)); }
 .tower.fresh { animation: grow 0.35s cubic-bezier(.3, 1.6, .5, 1); }
 
 @keyframes grow {
@@ -881,7 +891,8 @@ a.chip { background: #efe9e4; color: var(--muted); }
 	font-size: 0.85rem;
 }
 
-.tally b { font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; color: var(--ink); }
+/* 数字用正文字体：圆体的 0 看起来像个方框 */
+.tally b { font-family: var(--font-body); font-weight: 700; font-size: 1.1rem; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 .emotes { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .emotes .chip { background: var(--lav-soft); color: var(--lav-deep); }
@@ -1014,12 +1025,12 @@ a.chip { background: #efe9e4; color: var(--muted); }
 	<div class="stage" id="stage">
 		<header class="bar">
 			<div class="title">
-				<svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#sunflower"/></svg>
+				<img class="ico" src="/games/goodnight-garden/art/sunflower.webp" alt="" draggable="false">
 				<div>
 					<h1><a href="/">晚安小菜园</a></h1>
 					<div class="meta">
 						<span id="night-label">第 1 夜</span>
-						<span class="basket" id="basket-wrap" title="菜筐里还有几颗菜"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#crate"/></svg><b id="basket">20</b></span>
+						<span class="basket" id="basket-wrap" title="菜筐里还有几颗菜"><img class="ico" src="/games/goodnight-garden/art/crate.webp" alt="" draggable="false"><b id="basket">20</b></span>
 					</div>
 				</div>
 			</div>
@@ -1031,12 +1042,12 @@ a.chip { background: #efe9e4; color: var(--muted); }
 
 		<div class="players" aria-live="polite">
 			<div class="player empty" id="player-0">
-				<span class="avatar"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#rabbit"/></svg><i class="dot"></i></span>
+				<span class="avatar"><img class="ico" src="/games/goodnight-garden/art/rabbit.webp" alt="" draggable="false"><i class="dot"></i></span>
 				<span class="who"><span class="name">等待加入</span><span class="sub"></span></span>
 			</div>
 			<div class="banner" id="banner">连接中…</div>
 			<div class="player empty" id="player-1">
-				<span class="avatar"><svg class="ico" aria-hidden="true"><use href="/shared/icons.svg#cat"/></svg><i class="dot"></i></span>
+				<span class="avatar"><img class="ico" src="/games/goodnight-garden/art/cat.webp" alt="" draggable="false"><i class="dot"></i></span>
 				<span class="who"><span class="name">等待加入</span><span class="sub"></span></span>
 			</div>
 		</div>
@@ -1181,8 +1192,24 @@ function current() {
 	return view ? settle(structuredClone(view.state), serverNow()) : null;
 }
 
+// SpriteCook 生成的插画，在 art/ 下，文件名就是图标名
+const ART = new Set([
+	"rabbit", "cat", "pig", "mouse", "monkey", "chick", "frog", "hippo", "fox",
+	"sunflower", "daisy", "carrot", "cactus", "scarecrow", "watering-can", "windmill", "honey", "crate",
+	"pig-sleep", "mouse-sleep", "monkey-sleep", "chick-sleep", "frog-sleep", "hippo-sleep", "fox-sleep", "rabbit-sleep", "cat-sleep",
+	"star", "moon", "rain", "wind", "fullmoon", "fog", "firefly", "harvest", "heart",
+	"fence", "bush", "mushroom", "stone", "lantern", "stump", "sign", "grass", "lily",
+]);
+const artUrl = (name) => `/games/goodnight-garden/art/${name}.webp`;
+
 function iconEl(name, className = "ico") {
-	return icon(name, className);
+	if (!ART.has(name)) return icon(name, className);
+	const image = document.createElement("img");
+	image.className = className;
+	image.src = artUrl(name);
+	image.alt = "";
+	image.draggable = false;
+	return image;
 }
 
 function place(el, x, y, size = C) {
@@ -1223,7 +1250,32 @@ function drawGround(S) {
 	crate.id = "crate";
 	crate.append(iconEl("crate"));
 	nodes.push(place(crate, garden.crate[0] * C, garden.crate[1] * C));
+	nodes.push(...decorations(garden));
 	groundEl.replaceChildren(...nodes);
+}
+
+const DECOR = ["bush", "mushroom", "stone", "lantern", "stump", "grass", "fence", "sign", "lily"];
+
+function decorations(garden) {
+	let seed = GARDENS.indexOf(garden) * 9301 + 49297;
+	const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+	const blocked = pathCells(garden.id);
+	const free = [];
+	for (let y = 0; y < ROWS; y += 1) {
+		for (let x = 0; x < COLS; x += 1) if (!blocked.has(`${x},${y}`)) free.push([x, y]);
+	}
+	const nodes = [];
+	for (let i = 0; i < 14 && free.length; i += 1) {
+		const [x, y] = free.splice(Math.floor(random() * free.length), 1)[0];
+		const kind = DECOR[i % DECOR.length];
+		const el = document.createElement("div");
+		el.className = "decor" + (kind === "lantern" ? " glow" : "");
+		el.dataset.cell = `${x},${y}`;
+		el.append(iconEl(kind));
+		const size = C * (0.55 + random() * 0.2);
+		nodes.push(place(el, x * C + random() * (C - size), y * C + random() * (C - size), size));
+	}
+	return nodes;
 }
 
 // 在 (x, y) 放下 kind 会和周围哪些塔组成组合
@@ -1303,6 +1355,8 @@ function drawTowers(S) {
 		pendingSpot = null;
 	}
 	towersEl.replaceChildren(...nodes);
+	const occupied = new Set(S.towers.map((tower) => `${tower.x},${tower.y}`));
+	groundEl.querySelectorAll(".decor").forEach((el) => { el.hidden = occupied.has(el.dataset.cell); });
 }
 
 // ---------- 夜晚回放：用同样的输入在本地再演算一遍，按服务端时间对齐播放 ----------
@@ -1569,7 +1623,7 @@ function playEffect(effect) {
 		const box = document.createElement("div");
 		box.className = "fx-sleep";
 		box.innerHTML = '<span class="zz">z z z</span><span class="cloud"></span>';
-		const body = iconEl(CRITTERS[kind].icon);
+		const body = iconEl(`${CRITTERS[kind].icon}-sleep`);
 		body.style.width = body.style.height = `${size}px`;
 		box.querySelector(".cloud").append(body);
 		box.style.left = `${px(effect.x) - size / 2 - 8}px`;
