@@ -760,7 +760,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 	max-height: 34vh;
 	overflow-y: auto;
 	display: grid;
-	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-columns: 40px minmax(0, 1fr);
 	gap: 4px 10px;
 	padding: 10px 12px;
 	border-radius: 18px;
@@ -768,7 +768,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--lav); outli
 	box-shadow: 0 8px 18px rgba(170, 110, 90, 0.12);
 }
 
-.sheet > .ico { grid-row: span 3; width: 40px; height: 40px; }
+/* 图标固定在左边一列，其余内容（标题、说明、组合、按钮）都放右边一列；
+   否则后面的行会被自动排进图标那一列，把它撑得很宽 */
+.sheet > .ico { grid-column: 1; grid-row: 1 / span 3; align-self: start; width: 40px; height: 40px; }
+.sheet > :not(.ico):not(.close) { grid-column: 2; min-width: 0; }
+.sheet h3 { padding-right: 32px; }
 .sheet .close {
 	position: absolute;
 	right: 8px;
